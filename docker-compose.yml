@@ -8,7 +8,9 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./data:/app/data  # Markdown persistence for classifications, tags, etc. (Phase 3+)
+      - ./data:/app/data
+    env_file:
+      - .env
     restart: unless-stopped
 
   frontend:

@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
 
 from app.parser import parse_excel
 
-EXCEL_PATH = "/Users/adam/projects/etom-explorer/GB921_Business_Process_Framework_Processes_Excel_v25.5.xlsx"
+EXCEL_PATH = "/Users/adam/projects/etom-explorer/docs/GB921_Business_Process_Framework_Processes_Excel_v25.5.xlsx"
 
 
 def count_nodes(nodes):
@@ -21,36 +21,53 @@ def count_nodes(nodes):
     return total
 
 
+EXPECTED_DOMAIN_ROOTS = [
+    "D-Market", "D-Product", "D-Customer", "D-Service",
+    "D-Resource", "D-BusinessPartner", "D-Enterprise", "D-Sales",
+]
+
+
 def main():
     print(f"Parsing: {EXCEL_PATH}")
     roots = parse_excel(EXCEL_PATH)
 
-    # --- Assertion 1: exactly 3 L0 nodes ---
-    assert len(roots) == 3, f"Expected 3 L0 nodes, got {len(roots)}: {[n.id for n in roots]}"
-    print(f"✓ L0 nodes ({len(roots)}): {[n.name for n in roots]}")
-
-    # --- Assertion 2: exactly 8 L1 nodes total ---
-    l1_nodes = [child for root in roots for child in root.children]
-    assert len(l1_nodes) == 8, (
-        f"Expected 8 L1 nodes, got {len(l1_nodes)}: {[n.id for n in l1_nodes]}"
+    # --- Assertion 1: exactly 8 domain root nodes ---
+    root_ids = [n.id for n in roots]
+    assert len(roots) == 8, f"Expected 8 domain roots, got {len(roots)}: {root_ids}"
+    assert sorted(root_ids) == sorted(EXPECTED_DOMAIN_ROOTS), (
+        f"Unexpected root IDs: {root_ids}"
     )
-    print(f"✓ L1 nodes ({len(l1_nodes)}): {[n.name for n in l1_nodes]}")
+    print(f"✓ Domain root nodes ({len(roots)}): {[n.name for n in roots]}")
 
-    # --- Assertion 3: total node count > 2800 ---
-    # The Excel contains 3,167 rows but 274 are exact duplicates (same UID/name/domain).
-    # After deduplication by Process identifier the unique count is 2,893 data nodes
-    # plus 3 L0 + 8 L1 synthesised nodes = 2,904 total.
+    # --- Assertion 2: total node count > 2800 ---
+    # 2,893 unique data nodes + 8 synthesised domain roots = 2,901 total.
     total = count_nodes(roots)
     assert total > 2800, f"Expected >2800 total nodes, got {total}"
-    print(f"✓ Total node count: {total} (2893 unique data nodes + 11 synthesised)")
+    print(f"✓ Total node count: {total}")
+
+    # --- Assertion 3: multi-VG processes capture all vertical groups ---
+    # Process 1.1.14 appears with both Fulfillment and Business Value Development.
+    def find_node(nodes, target_id):
+        for n in nodes:
+            if n.id == target_id:
+                return n
+            result = find_node(n.children, target_id)
+            if result:
+                return result
+        return None
+
+    node_1114 = find_node(roots, "1.1.14")
+    assert node_1114 is not None, "Could not find process 1.1.14"
+    assert len(node_1114.vertical_groups) >= 2, (
+        f"Expected >=2 vertical groups for 1.1.14, got {node_1114.vertical_groups}"
+    )
+    print(f"✓ Multi-VG process 1.1.14 has groups: {node_1114.vertical_groups}")
 
     # --- Summary ---
     print("\n=== Summary ===")
-    for l0 in roots:
-        print(f"\nL0: {l0.name} ({l0.id})")
-        for l1 in l0.children:
-            l2_count = len(l1.children)
-            print(f"  L1: {l1.name} ({l1.id}) — {l2_count} L2 children")
+    for root in roots:
+        l2_count = len(root.children)
+        print(f"  {root.name} ({root.id}) — {l2_count} L2 children")
 
     print("\nAll assertions passed.")
 

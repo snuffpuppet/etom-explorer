@@ -22,6 +22,19 @@ interface ProcessTileProps {
   teamAssignments?: TeamAssignment[]
 }
 
+const VG_CHIP: Record<string, { abbr: string; cls: string }> = {
+  'Fulfillment':                   { abbr: 'FUL', cls: 'bg-blue-900 text-blue-300' },
+  'Assurance':                     { abbr: 'ASR', cls: 'bg-amber-900 text-amber-300' },
+  'Billing':                       { abbr: 'BIL', cls: 'bg-green-900 text-green-300' },
+  'Operations Readiness & Support':{ abbr: 'ORS', cls: 'bg-slate-700 text-slate-300' },
+  'operations Readiness & Support':{ abbr: 'ORS', cls: 'bg-slate-700 text-slate-300' },
+  'Strategy Management':           { abbr: 'SMT', cls: 'bg-purple-900 text-purple-300' },
+  'strategy Management':           { abbr: 'SMT', cls: 'bg-purple-900 text-purple-300' },
+  'Business Value Development':    { abbr: 'BVD', cls: 'bg-fuchsia-900 text-fuchsia-300' },
+  'business Value Development':    { abbr: 'BVD', cls: 'bg-fuchsia-900 text-fuchsia-300' },
+  'Capability Management':         { abbr: 'CAP', cls: 'bg-teal-900 text-teal-300' },
+}
+
 function getLevelBackground(level: number): string {
   if (level === 1) return 'bg-gray-800'
   if (level === 2) return 'bg-[#1a2030]'
@@ -111,6 +124,21 @@ export function ProcessTile({ node, isSelected, onSelect, level, siblingSelected
         {/* Brief description */}
         {node.brief_description && (
           <p className="text-xs text-gray-400 mt-1 line-clamp-2">{node.brief_description}</p>
+        )}
+
+        {/* Vertical group chips */}
+        {node.vertical_groups.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {node.vertical_groups.map((vg) => {
+              const chip = VG_CHIP[vg]
+              if (!chip) return null
+              return (
+                <span key={vg} className={`text-[10px] font-medium px-1 py-0.5 rounded ${chip.cls}`}>
+                  {chip.abbr}
+                </span>
+              )
+            })}
+          </div>
         )}
 
         {/* Tag + team badges */}

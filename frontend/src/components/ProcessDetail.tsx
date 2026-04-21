@@ -241,7 +241,7 @@ export function ProcessDetail({ node, classification, descopedEntry, onClose }: 
           {/* Metadata */}
           <section className="text-xs text-gray-600 flex flex-col gap-1 mt-auto pt-2 border-t border-gray-800">
             {node.domain && <div>Domain: {node.domain}</div>}
-            {node.vertical_group && <div>Vertical group: {node.vertical_group}</div>}
+            {node.vertical_groups.length > 0 && <div>Vertical group: {node.vertical_groups.join(', ')}</div>}
             {node.children.length > 0 && <div>{node.children.length} child processes</div>}
           </section>
         </div>

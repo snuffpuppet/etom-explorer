@@ -154,7 +154,8 @@ export function TreeView({ domain }: TreeViewProps) {
       {rows.map(({ nodes, depth }) => {
         const selectedId = drillPath[depth] ?? null
         const parentNode = depth === 0 ? null : nodeMap.get(drillPath[depth - 1])
-        const label = depth === 0 ? 'Level 1' : `Level ${depth + 1} — ${parentNode?.name ?? ''}`
+        const levelNum = nodes[0]?.level ?? depth + 2
+        const label = depth === 0 ? `Level ${levelNum}` : `Level ${levelNum} — ${parentNode?.name ?? ''}`
 
         return (
           <TileRow
