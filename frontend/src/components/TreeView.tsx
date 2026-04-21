@@ -1,6 +1,9 @@
 import { useMemo } from 'react'
 import { ProcessNode } from '../types/process'
+import type { Classification, DescopedEntry, Category, ReviewStatus } from '../types/classification'
 import { useNavigationStore } from '../store/navigation'
+import { useFilterStore } from '../store/filters'
+import { useClassifications, useDescoped } from '../hooks/useClassifications'
 import { TileRow } from './TileRow'
 
 interface TreeViewProps {
@@ -19,22 +22,97 @@ function buildNodeMap(nodes: ProcessNode[]): Map<string, ProcessNode> {
   return map
 }
 
+type Visibility = 'visible' | 'muted' | 'hidden'
+
+function nodeMatchesFilters(
+  node: ProcessNode,
+  classificationsMap: Map<string, Classification>,
+  descopedSet: Set<string>,
+  categories: Category[],
+  reviewStatuses: ReviewStatus[],
+  showDescoped: 'show' | 'dim' | 'hide',
+): boolean {
+  const isDescoped = descopedSet.has(node.id)
+  const cls = classificationsMap.get(node.id)
+
+  if (isDescoped) {
+    if (showDescoped === 'hide') return false
+  }
+
+  if (categories.length > 0) {
+    const cat = cls?.category ?? 'unclassified'
+    if (!categories.includes(cat)) return false
+  }
+
+  if (reviewStatuses.length > 0) {
+    const rs = isDescoped ? 'descoped' : (cls?.review_status ?? 'unreviewed')
+    if (!reviewStatuses.includes(rs as ReviewStatus)) return false
+  }
+
+  return true
+}
+
+function hasMatchingDescendant(
+  node: ProcessNode,
+  classificationsMap: Map<string, Classification>,
+  descopedSet: Set<string>,
+  categories: Category[],
+  reviewStatuses: ReviewStatus[],
+  showDescoped: 'show' | 'dim' | 'hide',
+): boolean {
+  for (const child of node.children) {
+    if (nodeMatchesFilters(child, classificationsMap, descopedSet, categories, reviewStatuses, showDescoped)) return true
+    if (hasMatchingDescendant(child, classificationsMap, descopedSet, categories, reviewStatuses, showDescoped)) return true
+  }
+  return false
+}
+
+function getVisibility(
+  node: ProcessNode,
+  classificationsMap: Map<string, Classification>,
+  descopedSet: Set<string>,
+  categories: Category[],
+  reviewStatuses: ReviewStatus[],
+  showDescoped: 'show' | 'dim' | 'hide',
+  filtersActive: boolean,
+): Visibility {
+  if (!filtersActive) return 'visible'
+
+  const matches = nodeMatchesFilters(node, classificationsMap, descopedSet, categories, reviewStatuses, showDescoped)
+  if (matches) return 'visible'
+
+  const descendantMatches = hasMatchingDescendant(node, classificationsMap, descopedSet, categories, reviewStatuses, showDescoped)
+  if (descendantMatches) return 'muted'
+
+  return 'hidden'
+}
+
 export function TreeView({ domain }: TreeViewProps) {
   const { drillPath, selectNode } = useNavigationStore()
+  const { categories, reviewStatuses, showDescoped } = useFilterStore()
+  const { data: classifications } = useClassifications()
+  const { data: descopedList } = useDescoped()
 
   const nodeMap = useMemo(() => buildNodeMap(domain.children), [domain])
 
-  // Build the list of rows to render
-  // Row at depth 0 = L1 children of domain
-  // Row at depth N = children of drillPath[N-1]
+  const classificationsMap = useMemo(() => {
+    const map = new Map<string, Classification>()
+    for (const c of classifications ?? []) map.set(c.id, c)
+    return map
+  }, [classifications])
+
+  const descopedSet = useMemo(() => {
+    return new Set((descopedList ?? []).map((d: DescopedEntry) => d.id))
+  }, [descopedList])
+
+  const filtersActive = categories.length > 0 || reviewStatuses.length > 0 || showDescoped !== 'dim'
+
   const rows: { nodes: ProcessNode[]; depth: number }[] = []
 
-  // Always show L1
   if (domain.children.length > 0) {
     rows.push({ nodes: domain.children, depth: 0 })
   }
 
-  // For each entry in drillPath, show children if the node exists and has children
   for (let i = 0; i < drillPath.length; i++) {
     const selectedId = drillPath[i]
     const selectedNode = nodeMap.get(selectedId)
@@ -60,6 +138,10 @@ export function TreeView({ domain }: TreeViewProps) {
             onSelect={(node) => selectNode(node.id, depth + 1)}
             level={depth + 1}
             label={label}
+            classificationsMap={classificationsMap}
+            descopedSet={descopedSet}
+            getVisibility={(node) => getVisibility(node, classificationsMap, descopedSet, categories, reviewStatuses, showDescoped, filtersActive)}
+            showDescoped={showDescoped}
           />
         )
       })}

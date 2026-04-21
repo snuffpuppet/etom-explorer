@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.parser import parse_excel
+from app.persistence import ensure_data_files
 
 EXCEL_PATH = os.getenv(
     "EXCEL_PATH",
@@ -15,6 +16,7 @@ EXCEL_PATH = os.getenv(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.process_tree = parse_excel(EXCEL_PATH)
+    ensure_data_files()
     yield
 
 
@@ -28,9 +30,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.routers import processes  # noqa: E402
+from app.routers import processes, classifications, descoped  # noqa: E402
 
 app.include_router(processes.router, prefix="/api")
+app.include_router(classifications.router, prefix="/api")
+app.include_router(descoped.router, prefix="/api")
 
 
 @app.get("/health")

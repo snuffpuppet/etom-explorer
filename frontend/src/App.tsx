@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { TopBar } from './components/TopBar'
 import { DomainTabs } from './components/DomainTabs'
+import { FilterBar } from './components/FilterBar'
 import { TreeView } from './components/TreeView'
 import { useProcessTree } from './hooks/useProcessTree'
 import { useNavigationStore } from './store/navigation'
@@ -37,6 +38,7 @@ function AppInner() {
       {tree && (
         <>
           <DomainTabs domains={tree} />
+          <FilterBar />
           <div className="flex-1 bg-gray-950 flex flex-col overflow-hidden">
             {activeDomain && <TreeView domain={activeDomain} />}
           </div>
