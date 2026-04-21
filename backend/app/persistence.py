@@ -120,9 +120,28 @@ def write_md_table(rows: list[dict[str, str]], columns: list[str]) -> str:
     return "\n".join([header, separator] + data_rows)
 
 
+def read_note(node_id: str) -> str:
+    """Read notes for a process node. Returns "" if not found."""
+    safe_id = node_id.replace("/", "_").replace(".", "_")
+    path = Path(_get_data_dir()) / "notes" / f"{safe_id}.md"
+    try:
+        return path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return ""
+
+
+def write_note(node_id: str, content: str) -> None:
+    """Write notes for a process node. Creates notes dir if needed."""
+    safe_id = node_id.replace("/", "_").replace(".", "_")
+    notes_dir = Path(_get_data_dir()) / "notes"
+    os.makedirs(notes_dir, exist_ok=True)
+    (notes_dir / f"{safe_id}.md").write_text(content, encoding="utf-8")
+
+
 def ensure_data_files() -> None:
     """Called on app startup. Creates any missing data files with empty tables."""
     os.makedirs(_get_data_dir(), exist_ok=True)
+    os.makedirs(os.path.join(_get_data_dir(), "notes"), exist_ok=True)
 
     _ensure_file(
         "classifications.md",

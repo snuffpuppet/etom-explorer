@@ -104,3 +104,14 @@ class SearchResult(BaseModel):
     brief_description: Optional[str] = None
     breadcrumbs: list[str] = []
     ancestor_ids: list[str] = []
+
+
+# Notes
+
+class NoteResponse(BaseModel):
+    id: str
+    content: str
+
+
+class NoteUpdate(BaseModel):
+    content: str

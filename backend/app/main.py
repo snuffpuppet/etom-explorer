@@ -32,7 +32,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.routers import processes, classifications, descoped, tags, teams, search, chat, llm  # noqa: E402
+from app.routers import processes, classifications, descoped, tags, teams, search, chat, llm, notes  # noqa: E402
 
 app.include_router(processes.router, prefix="/api")
 app.include_router(classifications.router, prefix="/api")
@@ -42,6 +42,7 @@ app.include_router(teams.router, prefix="/api")
 app.include_router(search.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
 app.include_router(llm.router, prefix="/api")
+app.include_router(notes.router, prefix="/api")
 
 
 @app.get("/health")
