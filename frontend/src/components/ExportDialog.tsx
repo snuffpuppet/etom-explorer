@@ -26,11 +26,14 @@ export function ExportDialog({ onClose }: ExportDialogProps) {
       const a = document.createElement('a')
       a.href = url
       a.download = `etom-requirements.${selectedFormat === 'html' ? 'html' : 'md'}`
+      document.body.appendChild(a)
       a.click()
-      URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(url), 100)
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Export failed')
+    } finally {
       setExporting(false)
     }
   }
