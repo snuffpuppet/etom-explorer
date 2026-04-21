@@ -1,5 +1,6 @@
 import { ProcessNode } from '../types/process'
 import type { Classification } from '../types/classification'
+import type { TagDef, TagAssignment, TeamAssignment } from '../types/tags'
 import { ProcessTile } from './ProcessTile'
 
 type Visibility = 'visible' | 'muted' | 'hidden'
@@ -14,9 +15,12 @@ interface TileRowProps {
   descopedSet: Set<string>
   getVisibility: (node: ProcessNode) => Visibility
   showDescoped: 'show' | 'dim' | 'hide'
+  tagDefs?: TagDef[]
+  tagAssignments?: TagAssignment[]
+  teamAssignments?: TeamAssignment[]
 }
 
-export function TileRow({ nodes, selectedId, onSelect, level, label, classificationsMap, descopedSet, getVisibility, showDescoped }: TileRowProps) {
+export function TileRow({ nodes, selectedId, onSelect, level, label, classificationsMap, descopedSet, getVisibility, showDescoped, tagDefs, tagAssignments, teamAssignments }: TileRowProps) {
   const hasSiblingSelected = selectedId !== null
 
   return (
@@ -48,6 +52,9 @@ export function TileRow({ nodes, selectedId, onSelect, level, label, classificat
               classification={classificationsMap.get(node.id) ?? null}
               isDescoped={isDescoped}
               isMuted={vis === 'muted' || dimDescoped}
+              tagDefs={tagDefs}
+              tagAssignments={tagAssignments}
+              teamAssignments={teamAssignments}
             />
           )
         })}
