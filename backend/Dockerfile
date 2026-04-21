@@ -1,5 +1,9 @@
 FROM python:3.12-slim
 
+# NOTE: Build context must be the repo root (not backend/).
+# docker-compose sets context: . so the Excel data file can be included.
+# All COPY paths below are relative to the repo root.
+
 WORKDIR /app
 
 COPY backend/requirements.txt .

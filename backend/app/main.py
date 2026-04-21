@@ -23,7 +23,7 @@ app = FastAPI(title="eTOM Explorer API", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,  # No auth yet; allow_credentials=True is invalid with allow_origins=["*"]
     allow_methods=["*"],
     allow_headers=["*"],
 )
