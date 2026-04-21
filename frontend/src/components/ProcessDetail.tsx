@@ -5,6 +5,7 @@ import { CATEGORY_LABELS, REVIEW_STATUS_LABELS } from '../types/classification'
 import { useTags, useTagAssignments, useUpdateNodeTags, useTeams, useUpdateNodeTeams } from '../hooks/useTags'
 import { TagBadge } from './TagBadge'
 import { TeamBadge } from './TeamBadge'
+import { NotesEditor } from './NotesEditor'
 
 interface ProcessDetailProps {
   node: ProcessNode
@@ -229,6 +230,12 @@ export function ProcessDetail({ node, classification, descopedEntry, onClose }: 
                 ))}
               </div>
             )}
+          </section>
+
+          {/* Notes */}
+          <section>
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Notes</h3>
+            <NotesEditor nodeId={node.id} />
           </section>
 
           {/* Metadata */}
