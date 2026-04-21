@@ -1,7 +1,7 @@
 """Chat API router — SSE streaming chat endpoint."""
 
 import json
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Literal
 
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
@@ -14,9 +14,18 @@ from app.persistence import read_md_file, parse_md_table
 
 router = APIRouter()
 
+_tree_context_cache: str | None = None
+
+
+def _get_tree_context(process_tree) -> str:
+    global _tree_context_cache
+    if _tree_context_cache is None:
+        _tree_context_cache = _build_tree_context(process_tree)
+    return _tree_context_cache
+
 
 class ChatMessage(BaseModel):
-    role: str
+    role: Literal["user", "assistant"]
     content: str
 
 
@@ -122,11 +131,12 @@ async def _sse_stream(
         yield f"data: {json.dumps({'done': True})}\n\n"
     except Exception as exc:
         yield f"data: {json.dumps({'error': str(exc)})}\n\n"
+        yield f"data: {json.dumps({'done': True})}\n\n"
 
 
 @router.post("/chat")
 async def chat(body: ChatRequest, request: Request):
-    tree_context = _build_tree_context(request.app.state.process_tree)
+    tree_context = _get_tree_context(request.app.state.process_tree)
     state_context = _build_state_context()
     system = build_chat_system_prompt(tree_context, state_context)
 
@@ -135,4 +145,5 @@ async def chat(body: ChatRequest, request: Request):
     return StreamingResponse(
         _sse_stream(body.provider, body.model, system, messages),
         media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

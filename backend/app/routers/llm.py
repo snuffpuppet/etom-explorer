@@ -1,6 +1,8 @@
 """LLM API router — model listing and classification seeding endpoints."""
 
-from fastapi import APIRouter, BackgroundTasks, Request, HTTPException
+import asyncio
+
+from fastapi import APIRouter, Request, HTTPException
 from pydantic import BaseModel
 
 from app.llm.client import get_models
@@ -35,18 +37,14 @@ async def _run_seed(app_state, process_tree, provider: str, model: str):
 
 
 @router.post("/llm/seed")
-async def start_seed(body: SeedRequest, request: Request, background_tasks: BackgroundTasks):
+async def start_seed(body: SeedRequest, request: Request):
+    if getattr(request.app.state, "seed_status", "idle") == "running":
+        raise HTTPException(status_code=409, detail="Seeding already in progress")
     request.app.state.seed_status = "running"
     request.app.state.seed_result = None
-
-    background_tasks.add_task(
-        _run_seed,
-        request.app.state,
-        request.app.state.process_tree,
-        body.provider,
-        body.model,
+    asyncio.create_task(
+        _run_seed(request.app.state, request.app.state.process_tree, body.provider, body.model)
     )
-
     return {"status": "started", "message": "Seeding started in background"}
 
 
