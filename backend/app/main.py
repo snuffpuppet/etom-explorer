@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.parser import parse_excel
+from app.persistence import ensure_data_files
 
 EXCEL_PATH = os.getenv(
     "EXCEL_PATH",
@@ -15,6 +16,7 @@ EXCEL_PATH = os.getenv(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.process_tree = parse_excel(EXCEL_PATH)
+    ensure_data_files()
     yield
 
 
