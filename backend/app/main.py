@@ -17,6 +17,8 @@ EXCEL_PATH = os.getenv(
 async def lifespan(app: FastAPI):
     app.state.process_tree = parse_excel(EXCEL_PATH)
     ensure_data_files()
+    app.state.seed_status = "idle"
+    app.state.seed_result = None
     yield
 
 
@@ -30,7 +32,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.routers import processes, classifications, descoped, tags, teams, search  # noqa: E402
+from app.routers import processes, classifications, descoped, tags, teams, search, chat, llm  # noqa: E402
 
 app.include_router(processes.router, prefix="/api")
 app.include_router(classifications.router, prefix="/api")
@@ -38,6 +40,8 @@ app.include_router(descoped.router, prefix="/api")
 app.include_router(tags.router, prefix="/api")
 app.include_router(teams.router, prefix="/api")
 app.include_router(search.router, prefix="/api")
+app.include_router(chat.router, prefix="/api")
+app.include_router(llm.router, prefix="/api")
 
 
 @app.get("/health")
