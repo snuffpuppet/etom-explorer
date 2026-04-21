@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { ProcessNode } from '../types/process'
 import { useNavigationStore } from '../store/navigation'
 import { TileRow } from './TileRow'
@@ -21,7 +22,7 @@ function buildNodeMap(nodes: ProcessNode[]): Map<string, ProcessNode> {
 export function TreeView({ domain }: TreeViewProps) {
   const { drillPath, selectNode } = useNavigationStore()
 
-  const nodeMap = buildNodeMap(domain.children)
+  const nodeMap = useMemo(() => buildNodeMap(domain.children), [domain])
 
   // Build the list of rows to render
   // Row at depth 0 = L1 children of domain
