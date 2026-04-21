@@ -30,9 +30,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.routers import processes  # noqa: E402
+from app.routers import processes, classifications, descoped  # noqa: E402
 
 app.include_router(processes.router, prefix="/api")
+app.include_router(classifications.router, prefix="/api")
+app.include_router(descoped.router, prefix="/api")
 
 
 @app.get("/health")

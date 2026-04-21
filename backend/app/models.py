@@ -1,5 +1,8 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Literal
+
+CategoryType = Literal["oss", "oss_bss", "bss", "other", "unclassified"]
+ReviewStatusType = Literal["unreviewed", "under_review", "classified", "descoped"]
 
 
 class ProcessNode(BaseModel):
@@ -17,3 +20,29 @@ class ProcessNode(BaseModel):
 
 
 ProcessNode.model_rebuild()
+
+
+class Classification(BaseModel):
+    id: str
+    name: str
+    category: CategoryType = "unclassified"
+    review_status: ReviewStatusType = "unreviewed"
+    notes: str = ""
+
+
+class ClassificationUpdate(BaseModel):
+    category: CategoryType
+    review_status: ReviewStatusType
+    notes: str = ""
+
+
+class DescopedEntry(BaseModel):
+    id: str
+    name: str
+    reason: str
+    notes: str = ""
+
+
+class DescopedUpdate(BaseModel):
+    reason: str
+    notes: str = ""

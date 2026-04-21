@@ -1,18 +1,9 @@
 from fastapi import APIRouter, Request, HTTPException
 from urllib.parse import unquote
 from app.models import ProcessNode
+from app.utils import find_node as _find_node
 
 router = APIRouter()
-
-
-def _find_node(tree: list[ProcessNode], node_id: str) -> ProcessNode | None:
-    for node in tree:
-        if node.id == node_id:
-            return node
-        found = _find_node(node.children, node_id)
-        if found is not None:
-            return found
-    return None
 
 
 @router.get("/processes", response_model=list[ProcessNode])
