@@ -3,6 +3,10 @@ import { ProcessNode } from '../types/process'
 import type { Classification } from '../types/classification'
 import { CATEGORY_COLOURS } from '../types/classification'
 import { ClassificationPanel } from './ClassificationPanel'
+import { TagBadge } from './TagBadge'
+import { TeamBadge } from './TeamBadge'
+import { useNavigationStore } from '../store/navigation'
+import type { TagDef, TagAssignment, TeamAssignment } from '../types/tags'
 
 interface ProcessTileProps {
   node: ProcessNode
@@ -13,6 +17,9 @@ interface ProcessTileProps {
   classification?: Classification | null
   isDescoped?: boolean
   isMuted?: boolean
+  tagDefs?: TagDef[]
+  tagAssignments?: TagAssignment[]
+  teamAssignments?: TeamAssignment[]
 }
 
 function getLevelBackground(level: number): string {
@@ -32,9 +39,14 @@ function getStatusDot(classification: Classification | null | undefined, isDesco
   }
 }
 
-export function ProcessTile({ node, isSelected, onSelect, level, siblingSelected, classification, isDescoped = false, isMuted = false }: ProcessTileProps) {
+export function ProcessTile({ node, isSelected, onSelect, level, siblingSelected, classification, isDescoped = false, isMuted = false, tagDefs = [], tagAssignments = [], teamAssignments = [] }: ProcessTileProps) {
   const [panelOpen, setPanelOpen] = useState(false)
   const [hovered, setHovered] = useState(false)
+  const { openDetail } = useNavigationStore()
+
+  const nodeTagAssignments = tagAssignments.filter((a) => a.node_id === node.id)
+  const nodeTeamAssignments = teamAssignments.filter((t) => t.node_id === node.id)
+  const tagDefsMap = new Map(tagDefs.map((t) => [t.id, t]))
 
   const bgClass = getLevelBackground(level)
   const childCount = node.children.length
@@ -101,6 +113,19 @@ export function ProcessTile({ node, isSelected, onSelect, level, siblingSelected
           <p className="text-xs text-gray-400 mt-1 line-clamp-2">{node.brief_description}</p>
         )}
 
+        {/* Tag + team badges */}
+        {(nodeTagAssignments.length > 0 || nodeTeamAssignments.length > 0) && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {nodeTagAssignments.map((a) => {
+              const def = tagDefsMap.get(a.tag_id)
+              return def ? <TagBadge key={a.tag_id} name={def.name} colour={def.colour} cascade={a.cascade === 'true'} /> : null
+            })}
+            {nodeTeamAssignments.map((t, i) => (
+              <TeamBadge key={i} team={t.team} func={t.function} />
+            ))}
+          </div>
+        )}
+
         {/* Footer */}
         <div className="flex items-center justify-between mt-auto pt-2">
           <span className="text-xs text-gray-500">
@@ -108,13 +133,22 @@ export function ProcessTile({ node, isSelected, onSelect, level, siblingSelected
           </span>
           <div className="flex items-center gap-1.5">
             {hovered && (
-              <button
-                onClick={handleEditClick}
-                className="text-gray-400 hover:text-white text-xs leading-none"
-                title="Edit classification"
-              >
-                ✏️
-              </button>
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); openDetail(node.id) }}
+                  className="text-gray-400 hover:text-white text-xs leading-none"
+                  title="View details"
+                >
+                  ⓘ
+                </button>
+                <button
+                  onClick={handleEditClick}
+                  className="text-gray-400 hover:text-white text-xs leading-none"
+                  title="Edit classification"
+                >
+                  ✏️
+                </button>
+              </>
             )}
             <span className={`inline-block w-1.5 h-1.5 rounded-full ${dot.colour}`} title={dot.title} />
           </div>

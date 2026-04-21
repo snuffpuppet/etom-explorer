@@ -134,6 +134,21 @@ def ensure_data_files() -> None:
         frontmatter={"version": 1},
         body="## Descoped\n\n" + write_md_table([], ["id", "name", "reason", "notes"])
     )
+    _ensure_file(
+        "tags.md",
+        frontmatter={"version": 1},
+        body="## Tags\n\n" + write_md_table([], ["id", "name", "colour", "description"])
+    )
+    _ensure_file(
+        "tag_assignments.md",
+        frontmatter={"version": 1},
+        body="## Assignments\n\n" + write_md_table([], ["node_id", "tag_id", "cascade"])
+    )
+    _ensure_file(
+        "teams.md",
+        frontmatter={"version": 1},
+        body="## Teams\n\n" + write_md_table([], ["node_id", "team", "function"])
+    )
 
 
 def _ensure_file(filename: str, frontmatter: dict, body: str) -> None:
