@@ -8,9 +8,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./data:/app/data
-    environment:
-      - EXCEL_PATH=/app/data_source/GB921_Business_Process_Framework_Processes_Excel_v25.5.xlsx
+      - ./data:/app/data  # Markdown persistence for classifications, tags, etc. (Phase 3+)
     restart: unless-stopped
 
   frontend:
