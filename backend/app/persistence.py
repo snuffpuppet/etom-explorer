@@ -122,6 +122,9 @@ def write_md_table(rows: list[dict[str, str]], columns: list[str]) -> str:
 
 def read_note(node_id: str) -> str:
     """Read notes for a process node. Returns "" if not found."""
+    # eTOM node IDs use dotted numeric form (e.g. "1.2.3.4") or slash form for L0/L1 synthetic
+    # IDs. Both separators map to "_". Collision between e.g. "1.2.3" and "1_2_3" is theoretically
+    # possible but does not occur in practice with real eTOM data.
     safe_id = node_id.replace("/", "_").replace(".", "_")
     path = Path(_get_data_dir()) / "notes" / f"{safe_id}.md"
     try:
@@ -132,6 +135,9 @@ def read_note(node_id: str) -> str:
 
 def write_note(node_id: str, content: str) -> None:
     """Write notes for a process node. Creates notes dir if needed."""
+    # eTOM node IDs use dotted numeric form (e.g. "1.2.3.4") or slash form for L0/L1 synthetic
+    # IDs. Both separators map to "_". Collision between e.g. "1.2.3" and "1_2_3" is theoretically
+    # possible but does not occur in practice with real eTOM data.
     safe_id = node_id.replace("/", "_").replace(".", "_")
     notes_dir = Path(_get_data_dir()) / "notes"
     os.makedirs(notes_dir, exist_ok=True)
