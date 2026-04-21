@@ -5,9 +5,10 @@ interface TopBarProps {
   onOpenChat: () => void
   onToggleValueStreams: () => void
   valueStreamsActive: boolean
+  onOpenExport: () => void
 }
 
-export function TopBar({ onOpenTagManager, onOpenChat, onToggleValueStreams, valueStreamsActive }: TopBarProps) {
+export function TopBar({ onOpenTagManager, onOpenChat, onToggleValueStreams, valueStreamsActive, onOpenExport }: TopBarProps) {
   return (
     <div className="bg-gray-900 w-full px-5 py-3 flex items-center justify-between">
       <span className="text-white font-semibold text-lg">eTOM Explorer</span>
@@ -28,6 +29,12 @@ export function TopBar({ onOpenTagManager, onOpenChat, onToggleValueStreams, val
           }`}
         >
           Value Streams
+        </button>
+        <button
+          onClick={onOpenExport}
+          className="bg-gray-800 hover:bg-gray-700 text-white text-sm font-medium px-4 py-1.5 rounded border border-gray-700"
+        >
+          Export
         </button>
         <button
           onClick={onOpenChat}

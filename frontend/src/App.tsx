@@ -9,6 +9,7 @@ import { ValueStreamsView } from './components/ValueStreamsView'
 import { TagManager } from './components/TagManager'
 import { ProcessDetail } from './components/ProcessDetail'
 import { ChatPanel } from './components/ChatPanel'
+import { ExportDialog } from './components/ExportDialog'
 import { useProcessTree } from './hooks/useProcessTree'
 import { useNavigationStore } from './store/navigation'
 import { useClassifications } from './hooks/useClassifications'
@@ -24,6 +25,7 @@ function AppInner() {
   const [tagManagerOpen, setTagManagerOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
   const [valueStreamsOpen, setValueStreamsOpen] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
 
   useEffect(() => {
     if (tree && tree.length > 0 && !activeDomainId) {
@@ -58,6 +60,7 @@ function AppInner() {
         onOpenChat={() => setChatOpen(true)}
         onToggleValueStreams={() => setValueStreamsOpen((v) => !v)}
         valueStreamsActive={valueStreamsOpen}
+        onOpenExport={() => setExportOpen(true)}
       />
       {isLoading && (
         <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
@@ -83,6 +86,7 @@ function AppInner() {
       )}
       {tagManagerOpen && <TagManager onClose={() => setTagManagerOpen(false)} />}
       {chatOpen && <ChatPanel onClose={() => setChatOpen(false)} />}
+      {exportOpen && <ExportDialog onClose={() => setExportOpen(false)} />}
       {detailNode && (
         <ProcessDetail
           node={detailNode}
