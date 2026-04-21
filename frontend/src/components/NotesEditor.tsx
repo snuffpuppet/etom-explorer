@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNote, useUpdateNote } from '../hooks/useNotes'
 
 interface NotesEditorProps {
@@ -9,8 +9,14 @@ export function NotesEditor({ nodeId }: NotesEditorProps) {
   const { data } = useNote(nodeId)
   const updateNote = useUpdateNote()
 
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [text, setText] = useState('')
   const [saveLabel, setSaveLabel] = useState<'Save' | 'Saving...' | 'Saved'>('Save')
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  }, [])
 
   // Sync textarea when server data loads or nodeId changes
   useEffect(() => {
@@ -24,7 +30,8 @@ export function NotesEditor({ nodeId }: NotesEditorProps) {
       {
         onSuccess: () => {
           setSaveLabel('Saved')
-          setTimeout(() => setSaveLabel('Save'), 2000)
+          if (timerRef.current) clearTimeout(timerRef.current)
+          timerRef.current = setTimeout(() => setSaveLabel('Save'), 2000)
         },
         onError: () => {
           setSaveLabel('Save')

@@ -10,6 +10,7 @@ export function useNote(nodeId: string) {
   return useQuery({
     queryKey: ['notes', nodeId],
     queryFn: () => apiFetch<Note>(`/notes/${encodeURIComponent(nodeId)}`),
+    staleTime: 0,
   })
 }
 
