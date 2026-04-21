@@ -5,6 +5,7 @@ import { TopBar } from './components/TopBar'
 import { DomainTabs } from './components/DomainTabs'
 import { FilterBar } from './components/FilterBar'
 import { TreeView } from './components/TreeView'
+import { ValueStreamsView } from './components/ValueStreamsView'
 import { TagManager } from './components/TagManager'
 import { ProcessDetail } from './components/ProcessDetail'
 import { ChatPanel } from './components/ChatPanel'
@@ -22,6 +23,7 @@ function AppInner() {
   const { data: descopedList = [] } = useDescoped()
   const [tagManagerOpen, setTagManagerOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
+  const [valueStreamsOpen, setValueStreamsOpen] = useState(false)
 
   useEffect(() => {
     if (tree && tree.length > 0 && !activeDomainId) {
@@ -51,7 +53,12 @@ function AppInner() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
-      <TopBar onOpenTagManager={() => setTagManagerOpen(true)} onOpenChat={() => setChatOpen(true)} />
+      <TopBar
+        onOpenTagManager={() => setTagManagerOpen(true)}
+        onOpenChat={() => setChatOpen(true)}
+        onToggleValueStreams={() => setValueStreamsOpen((v) => !v)}
+        valueStreamsActive={valueStreamsOpen}
+      />
       {isLoading && (
         <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
           Loading processes...
@@ -67,7 +74,10 @@ function AppInner() {
           <DomainTabs domains={tree} />
           <FilterBar />
           <div className="flex-1 bg-gray-950 flex flex-col overflow-hidden">
-            {activeDomain && <TreeView domain={activeDomain} />}
+            {valueStreamsOpen
+              ? <ValueStreamsView />
+              : activeDomain && <TreeView domain={activeDomain} />
+            }
           </div>
         </>
       )}
