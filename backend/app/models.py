@@ -119,9 +119,12 @@ class NoteUpdate(BaseModel):
 
 # Value Streams
 
+ValueStreamCategoryType = Literal["customer", "operational"]
+
+
 class ValueStream(BaseModel):
     id: str
-    category: str  # "customer" | "operational"
+    category: ValueStreamCategoryType
     name: str
     process_ids: list[str] = []
 

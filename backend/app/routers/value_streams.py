@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from app.models import ValueStream, ValueStreamUpdate
 from app.persistence import read_md_file, write_md_file, parse_md_table, write_md_table
+from app.utils import find_node
 
 router = APIRouter()
 
@@ -19,19 +20,19 @@ VALUE_STREAMS = [
 
 _VS_IDS = {vs["id"] for vs in VALUE_STREAMS}
 
-FILE = "value-streams.md"
+FILENAME = "value-streams.md"
 SECTION = "Assignments"
 COLUMNS = ["stream_id", "process_id"]
 
 
 def _read_rows() -> list[dict]:
-    _, body = read_md_file(FILE)
+    _, body = read_md_file(FILENAME)
     return parse_md_table(body, SECTION)
 
 
 def _write_rows(rows: list[dict]) -> None:
     body = f"## {SECTION}\n\n" + write_md_table(rows, COLUMNS)
-    write_md_file(FILE, {"version": 1}, body)
+    write_md_file(FILENAME, {"version": 1}, body)
 
 
 def _build_response(rows: list[dict]) -> list[ValueStream]:
@@ -56,9 +57,14 @@ async def list_value_streams():
 
 
 @router.put("/value-streams/{stream_id}", response_model=ValueStream)
-async def update_value_stream(stream_id: str, body: ValueStreamUpdate):
+async def update_value_stream(stream_id: str, body: ValueStreamUpdate, request: Request):
     if stream_id not in _VS_IDS:
         raise HTTPException(status_code=404, detail=f"Value stream '{stream_id}' not found")
+
+    tree = request.app.state.process_tree
+    for pid in body.process_ids:
+        if find_node(tree, pid) is None:
+            raise HTTPException(status_code=422, detail=f"Process node '{pid}' not found")
 
     rows = _read_rows()
     # Remove existing rows for this stream
