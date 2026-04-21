@@ -7,6 +7,7 @@ import { FilterBar } from './components/FilterBar'
 import { TreeView } from './components/TreeView'
 import { TagManager } from './components/TagManager'
 import { ProcessDetail } from './components/ProcessDetail'
+import { ChatPanel } from './components/ChatPanel'
 import { useProcessTree } from './hooks/useProcessTree'
 import { useNavigationStore } from './store/navigation'
 import { useClassifications } from './hooks/useClassifications'
@@ -20,6 +21,7 @@ function AppInner() {
   const { data: classifications = [] } = useClassifications()
   const { data: descopedList = [] } = useDescoped()
   const [tagManagerOpen, setTagManagerOpen] = useState(false)
+  const [chatOpen, setChatOpen] = useState(false)
 
   useEffect(() => {
     if (tree && tree.length > 0 && !activeDomainId) {
@@ -49,7 +51,7 @@ function AppInner() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
-      <TopBar onOpenTagManager={() => setTagManagerOpen(true)} />
+      <TopBar onOpenTagManager={() => setTagManagerOpen(true)} onOpenChat={() => setChatOpen(true)} />
       {isLoading && (
         <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
           Loading processes...
@@ -70,6 +72,7 @@ function AppInner() {
         </>
       )}
       {tagManagerOpen && <TagManager onClose={() => setTagManagerOpen(false)} />}
+      {chatOpen && <ChatPanel onClose={() => setChatOpen(false)} />}
       {detailNode && (
         <ProcessDetail
           node={detailNode}
