@@ -3,12 +3,17 @@ from datetime import date
 from io import StringIO
 
 from fastapi import APIRouter
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response
 
 from app.models import ExportRequest
 from app.persistence import parse_md_table, read_md_file, read_note
 
 router = APIRouter()
+
+
+def _esc(s: str) -> str:
+    """Escape HTML special characters in user-supplied strings."""
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 CATEGORY_LABELS = {
     "oss": "OSS",
@@ -59,8 +64,9 @@ def _build_markdown() -> str:
             category = cls_by_id[node_id].get("category", "unclassified")
             if category in ("oss", "oss_bss"):
                 new_processes.append(node_id)
-            else:
+            elif category in ("bss", "other"):
                 changing_processes.append(node_id)
+            # unclassified processes are omitted from the export
 
     # Sort for deterministic output
     new_processes.sort()
@@ -73,6 +79,9 @@ def _build_markdown() -> str:
 
     def write_classified_section(heading: str, ids: list[str]) -> None:
         buf.write(f"## {heading}\n\n")
+        if not ids:
+            buf.write("_None_\n\n")
+            return
         for node_id in ids:
             row = cls_by_id[node_id]
             name = row.get("name", "")
@@ -104,6 +113,8 @@ def _build_markdown() -> str:
     write_classified_section("Changing Processes", changing_processes)
 
     buf.write("## No Longer Needed\n\n")
+    if not descoped_processes:
+        buf.write("_None_\n\n")
     for node_id in descoped_processes:
         row = dsc_by_id[node_id]
         name = row.get("name", "")
@@ -134,13 +145,13 @@ def _md_to_html(md: str) -> str:
         line = lines[i]
 
         if line.startswith("### "):
-            buf.write(f"<h3>{line[4:]}</h3>\n")
+            buf.write(f"<h3>{_esc(line[4:])}</h3>\n")
             i += 1
         elif line.startswith("## "):
-            buf.write(f"<h2>{line[3:]}</h2>\n")
+            buf.write(f"<h2>{_esc(line[3:])}</h2>\n")
             i += 1
         elif line.startswith("# "):
-            buf.write(f"<h1>{line[2:]}</h1>\n")
+            buf.write(f"<h1>{_esc(line[2:])}</h1>\n")
             i += 1
         elif line.strip() == "---":
             buf.write("<hr>\n")
@@ -149,7 +160,7 @@ def _md_to_html(md: str) -> str:
             # Collect consecutive list items
             buf.write("<ul>\n")
             while i < len(lines) and lines[i].startswith("- "):
-                item = lines[i][2:]
+                item = _esc(lines[i][2:])
                 item = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", item)
                 buf.write(f"<li>{item}</li>\n")
                 i += 1
@@ -157,7 +168,7 @@ def _md_to_html(md: str) -> str:
         elif line.strip() == "":
             i += 1
         else:
-            buf.write(f"<p>{line}</p>\n")
+            buf.write(f"<p>{_esc(line)}</p>\n")
             i += 1
 
     buf.write("</body>\n</html>\n")
@@ -178,8 +189,4 @@ async def export_document(request: ExportRequest):
         filename = "etom-requirements.md"
 
     headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
-    return StreamingResponse(
-        iter([content]),
-        media_type=media_type,
-        headers=headers,
-    )
+    return Response(content=content, media_type=media_type, headers=headers)
