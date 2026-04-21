@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useValueStreams } from '../hooks/useValueStreams'
 import type { ValueStream } from '../hooks/useValueStreams'
 import { useProcessTree } from '../hooks/useProcessTree'
@@ -61,7 +61,7 @@ export function ValueStreamsView() {
   const { data: streams = [], isLoading, isError } = useValueStreams()
   const { data: tree = [] } = useProcessTree()
 
-  const processMap = buildFlatMap(tree)
+  const processMap = useMemo(() => buildFlatMap(tree), [tree])
 
   const customerStreams = streams.filter((s) => s.category === 'customer')
   const operationalStreams = streams.filter((s) => s.category === 'operational')
