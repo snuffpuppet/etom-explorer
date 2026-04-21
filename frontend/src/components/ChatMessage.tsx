@@ -6,15 +6,13 @@ interface ChatMessageProps {
   isStreaming?: boolean
 }
 
-const PROCESS_PATTERN = /\[Process:\s*([^\]]+)\]/g
-
 function parseContent(content: string): React.ReactNode[] {
+  const pattern = /\[Process:\s*([^\]]+)\]/g
   const nodes: React.ReactNode[] = []
   let lastIndex = 0
   let match: RegExpExecArray | null
 
-  PROCESS_PATTERN.lastIndex = 0
-  while ((match = PROCESS_PATTERN.exec(content)) !== null) {
+  while ((match = pattern.exec(content)) !== null) {
     const before = content.slice(lastIndex, match.index)
     if (before) nodes.push(before)
     nodes.push(

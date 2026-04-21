@@ -17,6 +17,7 @@ export function SeedingButton({ provider, model }: SeedingButtonProps) {
   const [resultCount, setResultCount] = useState<number>(0)
   const [errorMsg, setErrorMsg] = useState<string>('')
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function clearPolling() {
     if (intervalRef.current !== null) {
@@ -29,6 +30,10 @@ export function SeedingButton({ provider, model }: SeedingButtonProps) {
     return () => clearPolling()
   }, [])
 
+  useEffect(() => {
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current) }
+  }, [])
+
   function startPolling() {
     clearPolling()
     intervalRef.current = setInterval(async () => {
@@ -39,7 +44,7 @@ export function SeedingButton({ provider, model }: SeedingButtonProps) {
           clearPolling()
           setResultCount(data.result?.classified ?? 0)
           setStatus('done')
-          setTimeout(() => setStatus('idle'), 3000)
+          timeoutRef.current = setTimeout(() => setStatus('idle'), 3000)
         } else if (data.status === 'error') {
           clearPolling()
           setStatus('error')

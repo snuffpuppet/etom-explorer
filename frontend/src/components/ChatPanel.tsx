@@ -32,10 +32,15 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  useEffect(() => {
+    return () => { abortRef.current?.abort() }
+  }, [])
 
   const sendMessage = useCallback(async () => {
     const text = input.trim()
@@ -52,10 +57,15 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
     const history = [...messages, userMsg].map(({ role, content }) => ({ role, content }))
 
     try {
+      abortRef.current?.abort()
+      const controller = new AbortController()
+      abortRef.current = controller
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ provider, model, messages: history }),
+        signal: controller.signal,
       })
 
       if (!response.ok || !response.body) {
@@ -78,6 +88,7 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
         const { done, value } = await reader.read()
         if (done) break
         buffer += decoder.decode(value, { stream: true })
+        buffer = buffer.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
         const lines = buffer.split('\n')
         buffer = lines.pop() ?? ''
         for (const line of lines) {
@@ -113,7 +124,11 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
           }
         }
       }
+      setMessages((prev) =>
+        prev.map((m) => m.id === assistantId ? { ...m, isStreaming: false } : m)
+      )
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantId
@@ -157,7 +172,7 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3" role="log" aria-live="polite" aria-label="Chat messages">
         {messages.map((msg) => (
           <ChatMessage
             key={msg.id}
