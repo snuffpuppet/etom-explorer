@@ -10,6 +10,9 @@ from app.llm.seeding import seed_classifications
 
 router = APIRouter()
 
+# Store strong references to background tasks to prevent garbage collection
+_background_tasks: set = set()
+
 
 class SeedRequest(BaseModel):
     provider: str = "claude"
@@ -42,9 +45,11 @@ async def start_seed(body: SeedRequest, request: Request):
         raise HTTPException(status_code=409, detail="Seeding already in progress")
     request.app.state.seed_status = "running"
     request.app.state.seed_result = None
-    asyncio.create_task(
+    task = asyncio.create_task(
         _run_seed(request.app.state, request.app.state.process_tree, body.provider, body.model)
     )
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
     return {"status": "started", "message": "Seeding started in background"}
 
 
