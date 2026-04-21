@@ -115,3 +115,16 @@ class NoteResponse(BaseModel):
 
 class NoteUpdate(BaseModel):
     content: str
+
+
+# Value Streams
+
+class ValueStream(BaseModel):
+    id: str
+    category: str  # "customer" | "operational"
+    name: str
+    process_ids: list[str] = []
+
+
+class ValueStreamUpdate(BaseModel):
+    process_ids: list[str] = []

@@ -174,6 +174,11 @@ def ensure_data_files() -> None:
         frontmatter={"version": 1},
         body="## Teams\n\n" + write_md_table([], ["node_id", "team", "function"])
     )
+    _ensure_file(
+        "value-streams.md",
+        frontmatter={"version": 1},
+        body="## Assignments\n\n" + write_md_table([], ["stream_id", "process_id"])
+    )
 
 
 def _ensure_file(filename: str, frontmatter: dict, body: str) -> None:
