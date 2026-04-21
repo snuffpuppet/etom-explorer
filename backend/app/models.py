@@ -131,3 +131,7 @@ class ValueStream(BaseModel):
 
 class ValueStreamUpdate(BaseModel):
     process_ids: list[str] = []
+
+
+class ExportRequest(BaseModel):
+    format: Literal["markdown", "html"] = "markdown"
