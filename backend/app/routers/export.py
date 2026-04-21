@@ -1,3 +1,4 @@
+import re
 from datetime import date
 from io import StringIO
 
@@ -149,8 +150,6 @@ def _md_to_html(md: str) -> str:
             buf.write("<ul>\n")
             while i < len(lines) and lines[i].startswith("- "):
                 item = lines[i][2:]
-                # Convert **text** to <strong>text</strong>
-                import re
                 item = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", item)
                 buf.write(f"<li>{item}</li>\n")
                 i += 1
