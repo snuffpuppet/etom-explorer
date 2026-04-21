@@ -22,6 +22,18 @@ OPENROUTER_MODELS = [
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
+_claude_client: anthropic.AsyncAnthropic | None = None
+
+
+def _get_claude_client() -> anthropic.AsyncAnthropic:
+    global _claude_client
+    if _claude_client is None:
+        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        if not api_key:
+            raise RuntimeError("ANTHROPIC_API_KEY environment variable not set")
+        _claude_client = anthropic.AsyncAnthropic(api_key=api_key)
+    return _claude_client
+
 
 def get_models(provider: str) -> list[str]:
     """Return list of model IDs for provider ('claude' or 'openrouter')."""
@@ -63,15 +75,11 @@ async def _stream_claude(
     messages: list[dict],
 ) -> AsyncGenerator[str, None]:
     """Stream from Claude direct API via anthropic SDK."""
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise RuntimeError("ANTHROPIC_API_KEY environment variable not set")
-
-    client = anthropic.AsyncAnthropic(api_key=api_key)
+    client = _get_claude_client()
 
     async with client.messages.stream(
         model=model,
-        max_tokens=4096,
+        max_tokens=8192,
         system=system,
         messages=messages,
     ) as stream:
@@ -95,12 +103,13 @@ async def _stream_openrouter(
         "model": model,
         "messages": all_messages,
         "stream": True,
+        "max_tokens": 8192,
     }
 
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://etom-explorer",
+        "HTTP-Referer": "http://localhost:3000",
         "X-Title": "eTOM Explorer",
     }
 

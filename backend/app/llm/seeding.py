@@ -1,7 +1,6 @@
 """Batch seeding logic for classifying eTOM processes via LLM."""
 
 import json
-import re
 from typing import Callable
 
 from app.models import ProcessNode
@@ -14,7 +13,7 @@ SECTION = "Classifications"
 COLUMNS = ["id", "name", "category", "review_status", "notes"]
 
 # review_status values that indicate a human has already made a decision — skip these
-_HUMAN_REVIEWED = {"classified", "descoped"}
+_HUMAN_REVIEWED = {"classified", "descoped", "under_review"}
 
 
 def get_seed_context(domain_node: ProcessNode) -> str:
@@ -31,12 +30,15 @@ def _collect_descendants(node: ProcessNode, lines: list[str], min_level: int) ->
     """Recursively collect 'ID: Name' strings for all descendants at >= min_level."""
     for child in node.children:
         if child.level >= min_level:
-            lines.append(f"{child.id}: {child.name}")
+            if child.brief_description:
+                lines.append(f"{child.id}: {child.name} — {child.brief_description}")
+            else:
+                lines.append(f"{child.id}: {child.name}")
         _collect_descendants(child, lines, min_level)
 
 
 async def seed_classifications(
-    process_tree: list,
+    process_tree: list[ProcessNode],
     provider: str,
     model: str,
     progress_callback: Callable[[str], None] | None = None,
@@ -162,18 +164,10 @@ async def seed_classifications(
 
 
 def _parse_classifications_json(response: str) -> list[dict]:
-    """Extract and parse the classifications JSON array from an LLM response.
-
-    Handles accidental markdown fences (```json ... ```) and extracts just the
-    JSON object if surrounded by other text.
-    """
-    # Strip markdown code fences if present
-    cleaned = re.sub(r"```(?:json)?\s*", "", response).replace("```", "").strip()
-
-    # Try to find a JSON object in the response
-    match = re.search(r'\{.*\}', cleaned, re.DOTALL)
-    if match:
-        cleaned = match.group(0)
-
-    data = json.loads(cleaned)
+    """Extract and parse the classifications JSON object from an LLM response."""
+    start = response.find('{')
+    end = response.rfind('}')
+    if start == -1 or end == -1 or end <= start:
+        raise ValueError("No JSON object found in response")
+    data = json.loads(response[start:end + 1])
     return data.get("classifications", [])
