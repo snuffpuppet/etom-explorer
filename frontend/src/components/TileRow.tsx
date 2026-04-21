@@ -1,39 +1,56 @@
 import { ProcessNode } from '../types/process'
+import type { Classification } from '../types/classification'
 import { ProcessTile } from './ProcessTile'
+
+type Visibility = 'visible' | 'muted' | 'hidden'
 
 interface TileRowProps {
   nodes: ProcessNode[]
-  selectedId: string | null    // ID of currently selected node in this row
+  selectedId: string | null
   onSelect: (node: ProcessNode) => void
-  level: number                // 1-based depth (for tile styling)
-  label: string                // e.g. "Level 1", "Level 2 — Fulfillment"
+  level: number
+  label: string
+  classificationsMap: Map<string, Classification>
+  descopedSet: Set<string>
+  getVisibility: (node: ProcessNode) => Visibility
+  showDescoped: 'show' | 'dim' | 'hide'
 }
 
-export function TileRow({ nodes, selectedId, onSelect, level, label }: TileRowProps) {
+export function TileRow({ nodes, selectedId, onSelect, level, label, classificationsMap, descopedSet, getVisibility, showDescoped }: TileRowProps) {
   const hasSiblingSelected = selectedId !== null
 
   return (
     <div>
-      {/* Connector line from selected tile above */}
       {level > 1 && (
         <div className="w-0.5 h-4 bg-blue-400/50 ml-8 mb-1" />
       )}
 
-      {/* Row label */}
       <p className="text-xs uppercase tracking-widest text-gray-500 mb-2">{label}</p>
 
-      {/* Tiles */}
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
-        {nodes.map((node) => (
-          <ProcessTile
-            key={node.id}
-            node={node}
-            isSelected={node.id === selectedId}
-            onSelect={() => onSelect(node)}
-            level={level}
-            siblingSelected={hasSiblingSelected && node.id !== selectedId}
-          />
-        ))}
+        {nodes.map((node) => {
+          const vis = getVisibility(node)
+          const isDescoped = descopedSet.has(node.id)
+
+          if (vis === 'hidden') return null
+
+          // If descoped and showDescoped is 'dim', render dimmed
+          const dimDescoped = isDescoped && showDescoped === 'dim'
+
+          return (
+            <ProcessTile
+              key={node.id}
+              node={node}
+              isSelected={node.id === selectedId}
+              onSelect={() => onSelect(node)}
+              level={level}
+              siblingSelected={hasSiblingSelected && node.id !== selectedId}
+              classification={classificationsMap.get(node.id) ?? null}
+              isDescoped={isDescoped}
+              isMuted={vis === 'muted' || dimDescoped}
+            />
+          )
+        })}
       </div>
     </div>
   )
