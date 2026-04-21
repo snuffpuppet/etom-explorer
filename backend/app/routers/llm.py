@@ -1,6 +1,5 @@
 """LLM API router — model listing and classification seeding endpoints."""
 
-import asyncio
 from fastapi import APIRouter, BackgroundTasks, Request, HTTPException
 from pydantic import BaseModel
 
@@ -24,18 +23,15 @@ async def list_models(provider: str = "claude"):
     return {"provider": provider, "models": models}
 
 
-def _run_seed(app_state, process_tree, provider: str, model: str):
-    """Synchronous wrapper that runs the async seeding coroutine in a new event loop."""
-    async def _do():
-        try:
-            result = await seed_classifications(process_tree, provider, model)
-            app_state.seed_status = "done"
-            app_state.seed_result = result
-        except Exception as exc:
-            app_state.seed_status = "error"
-            app_state.seed_result = {"error": str(exc)}
-
-    asyncio.run(_do())
+async def _run_seed(app_state, process_tree, provider: str, model: str):
+    """Async background task for classification seeding."""
+    try:
+        result = await seed_classifications(process_tree, provider, model)
+        app_state.seed_status = "done"
+        app_state.seed_result = result
+    except Exception as exc:
+        app_state.seed_status = "error"
+        app_state.seed_result = {"error": str(exc)}
 
 
 @router.post("/llm/seed")
