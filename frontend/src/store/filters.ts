@@ -7,11 +7,13 @@ interface FilterState {
   showDescoped: 'show' | 'dim' | 'hide'
   selectedTags: string[]
   selectedTeam: string | null
+  selectedVGs: string[]
   toggleCategory: (c: Category) => void
   toggleReviewStatus: (r: ReviewStatus) => void
   setShowDescoped: (v: 'show' | 'dim' | 'hide') => void
   toggleTag: (tagId: string) => void
   setTeam: (team: string | null) => void
+  toggleVG: (vg: string) => void
   clearAll: () => void
 }
 
@@ -21,6 +23,7 @@ export const useFilterStore = create<FilterState>((set) => ({
   showDescoped: 'dim',
   selectedTags: [],
   selectedTeam: null,
+  selectedVGs: [],
   toggleCategory: (c) => set((s) => ({
     categories: s.categories.includes(c) ? s.categories.filter(x => x !== c) : [...s.categories, c]
   })),
@@ -32,5 +35,8 @@ export const useFilterStore = create<FilterState>((set) => ({
     selectedTags: s.selectedTags.includes(tagId) ? s.selectedTags.filter(x => x !== tagId) : [...s.selectedTags, tagId]
   })),
   setTeam: (team) => set({ selectedTeam: team }),
-  clearAll: () => set({ categories: [], reviewStatuses: [], showDescoped: 'dim', selectedTags: [], selectedTeam: null }),
+  toggleVG: (vg) => set((s) => ({
+    selectedVGs: s.selectedVGs.includes(vg) ? s.selectedVGs.filter(x => x !== vg) : [...s.selectedVGs, vg]
+  })),
+  clearAll: () => set({ categories: [], reviewStatuses: [], showDescoped: 'dim', selectedTags: [], selectedTeam: null, selectedVGs: [] }),
 }))
