@@ -37,17 +37,17 @@ Declared values (multiples of 4 only). Values are Tailwind class equivalents.
 |-------|-------|----------|-------|
 | xs | 4px | p-1 / gap-1 | Icon gaps, chip internal padding, status dot gap |
 | sm | 8px | p-2 / gap-2 | Compact button padding, inline element gaps |
-| md | 12px | p-3 / gap-3 | Tile internal padding (existing: `p-3`) |
-| lg | 16px | p-4 / gap-4 | Modal internal padding (EDIT-03 comfortable padding) |
-| xl | 20px | p-5 / gap-5 | FilterBar horizontal padding (existing: `px-5`) |
-| 2xl | 24px | p-6 / gap-6 | Modal section separation |
-| 3xl | 32px | p-8 | Reserved — not used in this phase |
+| md | 16px | p-4 / gap-4 | Tile internal padding (upgrade from existing `p-3`) |
+| lg | 24px | p-6 / gap-6 | Modal internal padding (EDIT-03 comfortable padding), modal section separation |
+| xl | 32px | p-8 | FilterBar horizontal padding — use `px-8` if redesigned; existing `px-5` may stay as-is |
+| 2xl | 48px | p-12 | Reserved — not used in this phase |
+| 3xl | 64px | p-16 | Reserved — not used in this phase |
 
 Exceptions:
 - Modal width: fixed `480px` (not on the 4-pt grid — dictated by EDIT-01 requirement: `~480px wide`)
 - Hover popover: `pointer-events-none` — no clickable padding needed; `p-2` (8px) internal padding
 - Textarea minimum height: 4 rows (EDIT-02) — height is row-count-driven, not pixel-driven
-- VG micro-label (`vg`): 2px horizontal padding (`px-0.5`) acceptable as label is decorative
+- VG micro-label (`vg`): text-only label, no horizontal padding
 
 ---
 
@@ -55,12 +55,14 @@ Exceptions:
 
 | Role | Size | Weight | Line Height | Tailwind | Usage |
 |------|------|--------|-------------|----------|-------|
-| Body | 14px | 400 (regular) | 1.5 | `text-sm` | Tile process name (existing: `text-sm font-semibold` — name is exception), panel labels, general text |
-| Label / micro | 10px | 500 (medium) | 1.2 | `text-[10px] font-medium` | VG chips (existing), VG micro-label (`vg`), filter status badges |
+| Body | 14px | 400 (regular) | 1.5 | `text-sm` | Panel labels, general text, secondary tile content |
+| Label / micro | 10px | 600 (semibold) | 1.2 | `text-[10px] font-semibold` | VG chips (existing), VG micro-label (`vg`), filter status badges |
 | Meta / muted | 12px | 400 (regular) | 1.4 | `text-xs` | Process ID + level line (TILE-01), brief description (existing), footer children count, section headings in panel |
 | Heading | 14px | 600 (semibold) | 1.2 | `text-sm font-semibold` | Tile process name (existing), modal node name heading |
 
-**Font weight vocabulary for this project: 400 (regular) and 600 (semibold) only.**
+**Font weight vocabulary for this project: 400 (regular) and 600 (semibold) only.** Weight 500 (medium) is not used anywhere in this phase.
+
+**Visual hierarchy:** The process name is the primary visual anchor (heading weight, white text). The ID + level line is secondary (meta/muted, monospace, gray-500). VG chips are tertiary (micro label, colour-coded, low prominence). The ⓘ and ✏️ icons are quaternary affordances — visible but not competing.
 
 TILE-01 typography contract:
 - Process ID and level line: `text-xs font-mono text-gray-500`
@@ -69,7 +71,7 @@ TILE-01 typography contract:
 - Placed immediately below process name, above brief description if present
 
 VG micro-label (`vg`) typography contract:
-- `text-[10px] font-medium text-gray-500 uppercase tracking-wide`
+- `text-[10px] font-semibold text-gray-500 uppercase tracking-wide`
 - Placed inline before the chip group: `vg` followed by chip row
 
 ---
@@ -85,12 +87,12 @@ All values are Tailwind dark-theme colours already in use. No new colour values 
 | Surface deep | `bg-[#1a2030]` / `bg-[#151c28]` | L2 / L3+ tile backgrounds (existing) |
 | Border / separator | `border-gray-700` | Panel borders, FilterBar bottom border, modal border (existing) |
 | Input surface | `bg-gray-700` | Textarea and select backgrounds in ClassificationPanel (existing) |
-| Accent (10%) | `blue-600` / `blue-400` / `blue-500` | Selected tile ring (`ring-blue-400`), Save button (`bg-blue-600`), focus borders (`focus:border-blue-500`) |
+| Accent (10%) | `blue-600` / `blue-400` / `blue-500` | Selected tile ring (`ring-blue-400`), Save Classification button (`bg-blue-600`), focus borders (`focus:border-blue-500`) |
 | Muted text | `text-gray-400` / `text-gray-500` | Secondary labels, placeholder text, ID/level meta line |
 | Primary text | `text-white` | Process names, interactive button labels |
 | Destructive | `red-700` / `red-500` | Descoped border (`border-red-500`), "Confirm Descope" button (`bg-red-700`), descoped status dot |
 
-**Accent reserved for:** selected tile ring, Save classification button, focus state on form controls, selected filter toggle buttons. Not used for VG chips (VG chips use their own semantic colour palette below).
+**Accent reserved for:** selected tile ring, Save Classification button, focus state on form controls, selected filter toggle buttons. Not used for VG chips (VG chips use their own semantic colour palette below).
 
 **VG chip colour palette (existing — do not modify):**
 
@@ -123,12 +125,12 @@ All values are Tailwind dark-theme colours already in use. No new colour values 
 ### TILE-01 — Process ID + Level display
 
 ```
-<p class="text-xs font-mono text-gray-500 mt-0.5">{node.id} · L{level}</p>
+<p class="text-xs font-mono text-gray-500">{node.id} · L{level}</p>
 ```
 
 - Placed below process name `<p>`, before brief description
 - Hidden on muted tiles (isMuted render path returns early — do not add)
-- `mt-0.5` (2px) tight spacing — IDs are secondary metadata
+- No additional margin-top — rely on natural flow spacing between sibling `<p>` elements
 
 ### TILE-02 — Hover popover
 
@@ -146,12 +148,14 @@ All values are Tailwind dark-theme colours already in use. No new colour values 
 - `pointer-events-none` on wrapper — enforced, not optional
 - ⓘ and ✏️ buttons must remain in DOM and clickable when popover is visible
 - Falls back to `node.name` if `brief_description` is empty
+- ⓘ button: `aria-label="Process info"`
+- ✏️ button: `aria-label="Edit classification"`
 
 ### TILE-03 — VG chip micro-label + tooltip
 
 ```
-<div class="flex items-center gap-1.5 mt-1.5">
-  <span class="text-[10px] font-medium text-gray-500 uppercase tracking-wide">vg</span>
+<div class="flex items-center gap-1 mt-1">
+  <span class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">vg</span>
   <div class="flex flex-wrap gap-1">
     {chips with title={fullVGName}}
   </div>
@@ -160,12 +164,13 @@ All values are Tailwind dark-theme colours already in use. No new colour values 
 
 - Each chip: add `title={vg}` attribute (full VG name as tooltip — native browser tooltip)
 - `vg` micro-label is always present when there are VG chips; one label for the whole group
+- `font-semibold` (weight 600) — not `font-medium`
 
 ### VG-01 — FilterBar VG toggle buttons
 
 - Section added after existing tag filters, separated by `<div class="w-px h-5 bg-gray-700 mx-1" />`
 - Label before toggles: `<span class="text-xs text-gray-500 mr-1">VG:</span>`
-- Toggle format matches existing category toggle pattern: `text-xs px-2.5 py-1 rounded border transition-colors`
+- Toggle format matches existing category toggle pattern: `text-xs px-2 py-1 rounded border transition-colors`
 - Active state: use VG chip background + text colour
 - Inactive state: border uses VG text colour at `88` alpha, text at `cc` alpha
 
@@ -177,7 +182,7 @@ All values are Tailwind dark-theme colours already in use. No new colour values 
 
 ### VG-03 — Active VG filter chips
 
-- Match existing active-chip pattern: `text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded cursor-pointer hover:bg-gray-600 flex items-center gap-1`
+- Match existing active-chip pattern: `text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded cursor-pointer hover:bg-gray-600 flex items-center gap-1`
 - Chip label: VG abbreviation (FUL, ASR, BIL, ORS, SMT, BVD, CAP)
 - Remove icon: `<span class="text-gray-500">×</span>` (existing pattern)
 
@@ -213,7 +218,7 @@ Both textareas: `rows={4}` (currently `rows={2}`)
 ### EDIT-03 — Section separation
 
 - Between sections: `mb-4` (existing `mb-3` → upgrade to `mb-4`)
-- Section label style: `text-xs text-gray-400 mb-1.5 uppercase tracking-wide` (existing — retain)
+- Section label style: `text-xs text-gray-400 mb-1 uppercase tracking-wide` (existing — retain)
 - Visual divider between Classification section and Descope section: `<hr class="border-gray-700 my-4" />`
 
 ---
@@ -246,9 +251,9 @@ Both textareas: `rows={4}` (currently `rows={2}`)
 | VG-01 FilterBar label | `VG:` (before toggle buttons) |
 | VG chip tooltip | Full VG name — e.g. `Fulfillment`, `Operations Readiness & Support` (native title attribute) |
 | VG-03 active chip | Abbreviation only — FUL / ASR / BIL / ORS / SMT / BVD / CAP |
-| Save button | `Save` (existing — retain) |
+| Save button | `Save Classification` |
 | Descope confirm button | `Confirm Descope` (existing — retain) |
-| Descope cancel button | `Cancel` (existing — retain) |
+| Descope cancel button | `Discard Changes` |
 | Notes placeholder | `Optional notes...` (existing — retain) |
 | Descope reason placeholder | `Reason for descoping...` (existing — retain) |
 | Empty VG filter result | No dedicated empty state needed — muted tiles remain visible at `opacity-30` when VG filter active (follow existing muted pattern) |
@@ -284,11 +289,11 @@ No new component libraries or registries introduced in this phase. All new UI is
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-04-23
