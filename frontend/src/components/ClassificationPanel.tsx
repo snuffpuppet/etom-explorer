@@ -44,10 +44,11 @@ export function ClassificationPanel({ node, classification, onClose }: Classific
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-40" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
 
-      {/* Panel */}
-      <div className="absolute z-50 top-0 left-full ml-2 w-72 bg-gray-800 border border-gray-700 rounded-lg p-4 shadow-xl">
+      {/* Modal */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+      <div className="pointer-events-auto bg-gray-800 border border-gray-700 rounded-lg w-[480px] max-h-[90vh] overflow-y-auto shadow-2xl p-6">
         <h3 className="text-sm font-semibold text-white mb-3 truncate">{node.name}</h3>
 
         {/* Category radio buttons */}
@@ -147,6 +148,7 @@ export function ClassificationPanel({ node, classification, onClose }: Classific
             </button>
           </div>
         )}
+      </div>
       </div>
     </>
   )
