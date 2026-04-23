@@ -6,7 +6,7 @@ Nine tightly related frontend improvements ship as a single phase. The work touc
 
 ## Phases
 
-- [ ] **Phase 1: UI Polish** - Tile clarity, VG filtering, and ClassificationPanel modal
+- [x] **Phase 1: UI Polish** - Tile clarity, VG filtering, and ClassificationPanel modal
 
 ## Phase Details
 
@@ -22,13 +22,13 @@ Nine tightly related frontend improvements ship as a single phase. The work touc
   5. ClassificationPanel opens as a centred fixed modal with a backdrop, comfortable padding, and textareas of at least 4 rows
 **Plans**: 3 plans
 Plans:
-- [ ] 01-01-PLAN.md — Tile info density: ID+level line, 250ms hover popover, VG micro-label + tooltips (TILE-01, TILE-02, TILE-03)
-- [ ] 01-02-PLAN.md — VG filter: store state, FilterBar toggles + active chips, TreeView filter pipeline (VG-01, VG-02, VG-03)
-- [ ] 01-03-PLAN.md — ClassificationPanel modal: centred fixed layout, 4-row textareas, section divider (EDIT-01, EDIT-02, EDIT-03)
+- [x] 01-01-PLAN.md — Tile info density: ID+level line, 250ms hover popover, VG micro-label + tooltips (TILE-01, TILE-02, TILE-03)
+- [x] 01-02-PLAN.md — VG filter: store state, FilterBar toggles + active chips, TreeView filter pipeline (VG-01, VG-02, VG-03)
+- [x] 01-03-PLAN.md — ClassificationPanel modal: centred fixed layout, 4-row textareas, section divider (EDIT-01, EDIT-02, EDIT-03)
 **UI hint**: yes
 
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. UI Polish | 0/3 | Not started | - |
+| 1. UI Polish | 3/3 | Complete | 2026-04-23 |
