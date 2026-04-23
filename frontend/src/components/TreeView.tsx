@@ -36,6 +36,7 @@ function nodeMatchesFilters(
   tagAssignmentMap: Map<string, string[]>,
   selectedTeam: string | null,
   teamAssignmentMap: Map<string, string[]>,
+  selectedVGs: string[],
 ): boolean {
   const isDescoped = descopedSet.has(node.id)
   const cls = classificationsMap.get(node.id)
@@ -62,6 +63,10 @@ function nodeMatchesFilters(
     if (!nodeTeams.includes(selectedTeam)) return false
   }
 
+  if (selectedVGs.length > 0) {
+    if (!node.vertical_groups.some((vg) => selectedVGs.includes(vg))) return false
+  }
+
   return true
 }
 
@@ -75,11 +80,12 @@ interface FilterParams {
   tagAssignmentMap: Map<string, string[]>
   selectedTeam: string | null
   teamAssignmentMap: Map<string, string[]>
+  selectedVGs: string[]
 }
 
 function hasMatchingDescendant(node: ProcessNode, fp: FilterParams): boolean {
   for (const child of node.children) {
-    if (nodeMatchesFilters(child, fp.classificationsMap, fp.descopedSet, fp.categories, fp.reviewStatuses, fp.showDescoped, fp.selectedTags, fp.tagAssignmentMap, fp.selectedTeam, fp.teamAssignmentMap)) return true
+    if (nodeMatchesFilters(child, fp.classificationsMap, fp.descopedSet, fp.categories, fp.reviewStatuses, fp.showDescoped, fp.selectedTags, fp.tagAssignmentMap, fp.selectedTeam, fp.teamAssignmentMap, fp.selectedVGs)) return true
     if (hasMatchingDescendant(child, fp)) return true
   }
   return false
@@ -87,7 +93,7 @@ function hasMatchingDescendant(node: ProcessNode, fp: FilterParams): boolean {
 
 function getVisibility(node: ProcessNode, fp: FilterParams, filtersActive: boolean): Visibility {
   if (!filtersActive) return 'visible'
-  const matches = nodeMatchesFilters(node, fp.classificationsMap, fp.descopedSet, fp.categories, fp.reviewStatuses, fp.showDescoped, fp.selectedTags, fp.tagAssignmentMap, fp.selectedTeam, fp.teamAssignmentMap)
+  const matches = nodeMatchesFilters(node, fp.classificationsMap, fp.descopedSet, fp.categories, fp.reviewStatuses, fp.showDescoped, fp.selectedTags, fp.tagAssignmentMap, fp.selectedTeam, fp.teamAssignmentMap, fp.selectedVGs)
   if (matches) return 'visible'
   if (hasMatchingDescendant(node, fp)) return 'muted'
   return 'hidden'
@@ -95,7 +101,7 @@ function getVisibility(node: ProcessNode, fp: FilterParams, filtersActive: boole
 
 export function TreeView({ domain }: TreeViewProps) {
   const { drillPath, selectNode } = useNavigationStore()
-  const { categories, reviewStatuses, showDescoped, selectedTags, selectedTeam } = useFilterStore()
+  const { categories, reviewStatuses, showDescoped, selectedTags, selectedTeam, selectedVGs } = useFilterStore()
   const { data: classifications } = useClassifications()
   const { data: descopedList } = useDescoped()
   const { data: tagDefs = [] } = useTags()
@@ -132,9 +138,9 @@ export function TreeView({ domain }: TreeViewProps) {
     return map
   }, [teamAssignments])
 
-  const filtersActive = categories.length > 0 || reviewStatuses.length > 0 || showDescoped !== 'dim' || selectedTags.length > 0 || selectedTeam !== null
+  const filtersActive = categories.length > 0 || reviewStatuses.length > 0 || showDescoped !== 'dim' || selectedTags.length > 0 || selectedTeam !== null || selectedVGs.length > 0
 
-  const fp: FilterParams = { classificationsMap, descopedSet, categories, reviewStatuses, showDescoped, selectedTags, tagAssignmentMap, selectedTeam, teamAssignmentMap }
+  const fp: FilterParams = { classificationsMap, descopedSet, categories, reviewStatuses, showDescoped, selectedTags, tagAssignmentMap, selectedTeam, teamAssignmentMap, selectedVGs }
 
   const rows: { nodes: ProcessNode[]; depth: number }[] = []
 

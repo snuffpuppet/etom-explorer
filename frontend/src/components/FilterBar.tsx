@@ -29,14 +29,24 @@ const DESCOPED_OPTIONS: Array<{ value: 'show' | 'dim' | 'hide'; label: string }>
 
 const CATEGORIES: Category[] = ['oss', 'oss_bss', 'bss', 'other']
 
+const VG_FILTER_CONFIG: Array<{ vg: string; abbr: string; bg: string; text: string }> = [
+  { vg: 'Fulfillment',                    abbr: 'FUL', bg: '#1e3a5f', text: '#93c5fd' },
+  { vg: 'Assurance',                      abbr: 'ASR', bg: '#451a03', text: '#fcd34d' },
+  { vg: 'Billing',                        abbr: 'BIL', bg: '#14532d', text: '#6ee7b7' },
+  { vg: 'Operations Readiness & Support', abbr: 'ORS', bg: '#334155', text: '#cbd5e1' },
+  { vg: 'Strategy Management',            abbr: 'SMT', bg: '#3b0764', text: '#d8b4fe' },
+  { vg: 'Business Value Development',     abbr: 'BVD', bg: '#4a044e', text: '#f0abfc' },
+  { vg: 'Capability Management',          abbr: 'CAP', bg: '#042f2e', text: '#5eead4' },
+]
+
 export function FilterBar() {
-  const { categories, reviewStatuses, showDescoped, selectedTags, selectedTeam,
-    toggleCategory, toggleReviewStatus, setShowDescoped, toggleTag, setTeam, clearAll } = useFilterStore()
+  const { categories, reviewStatuses, showDescoped, selectedTags, selectedTeam, selectedVGs,
+    toggleCategory, toggleReviewStatus, setShowDescoped, toggleTag, setTeam, toggleVG, clearAll } = useFilterStore()
   const { data: tagDefs = [] } = useTags()
   const { data: allTeams = [] } = useTeams()
 
   const teamNames = [...new Set(allTeams.map((t) => t.team))].sort()
-  const hasActive = categories.length > 0 || reviewStatuses.length > 0 || selectedTags.length > 0 || selectedTeam !== null
+  const hasActive = categories.length > 0 || reviewStatuses.length > 0 || selectedTags.length > 0 || selectedTeam !== null || selectedVGs.length > 0
 
   return (
     <div className="bg-gray-900 border-b border-gray-700 px-5 py-2 flex items-center gap-3 flex-wrap">
@@ -109,6 +119,28 @@ export function FilterBar() {
         </>
       )}
 
+      {/* VG filters */}
+      <>
+        <div className="w-px h-5 bg-gray-700 mx-1" />
+        <span className="text-xs text-gray-500 mr-1">VG:</span>
+        {VG_FILTER_CONFIG.map(({ vg, abbr, bg, text }) => {
+          const active = selectedVGs.includes(vg)
+          return (
+            <button
+              key={vg}
+              onClick={() => toggleVG(vg)}
+              className="text-xs px-2 py-1 rounded border transition-colors"
+              style={active
+                ? { backgroundColor: bg, borderColor: bg, color: text }
+                : { borderColor: text + '88', color: text + 'cc' }
+              }
+            >
+              {abbr}
+            </button>
+          )
+        })}
+      </>
+
       {/* Team filter */}
       {teamNames.length > 0 && (
         <>
@@ -156,6 +188,15 @@ export function FilterBar() {
                 {selectedTeam} <span className="text-gray-500">×</span>
               </span>
             )}
+            {selectedVGs.map((vg) => {
+              const cfg = VG_FILTER_CONFIG.find((c) => c.vg === vg)
+              return cfg ? (
+                <span key={vg} onClick={() => toggleVG(vg)}
+                  className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded cursor-pointer hover:bg-gray-600 flex items-center gap-1">
+                  {cfg.abbr} <span className="text-gray-500">×</span>
+                </span>
+              ) : null
+            })}
             <button onClick={clearAll} className="text-xs text-gray-500 hover:text-gray-300 underline ml-1">
               Clear all
             </button>

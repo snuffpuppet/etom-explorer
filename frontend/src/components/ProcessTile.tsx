@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { ProcessNode } from '../types/process'
 import type { Classification } from '../types/classification'
 import { CATEGORY_COLOURS } from '../types/classification'
@@ -55,6 +55,7 @@ function getStatusDot(classification: Classification | null | undefined, isDesco
 export function ProcessTile({ node, isSelected, onSelect, level, siblingSelected, classification, isDescoped = false, isMuted = false, tagDefs = [], tagAssignments = [], teamAssignments = [] }: ProcessTileProps) {
   const [panelOpen, setPanelOpen] = useState(false)
   const [hovered, setHovered] = useState(false)
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { openDetail } = useNavigationStore()
 
   const nodeTagAssignments = tagAssignments.filter((a) => a.node_id === node.id)
@@ -99,8 +100,13 @@ export function ProcessTile({ node, isSelected, onSelect, level, siblingSelected
   return (
     <div
       className="relative"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={() => {
+        hoverTimerRef.current = setTimeout(() => setHovered(true), 250)
+      }}
+      onMouseLeave={() => {
+        if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current)
+        setHovered(false)
+      }}
     >
       <div
         onClick={onSelect}
@@ -121,6 +127,9 @@ export function ProcessTile({ node, isSelected, onSelect, level, siblingSelected
           {node.name}
         </p>
 
+        {/* Process ID + level */}
+        <p className="text-xs font-mono text-gray-500">{node.id} · L{level}</p>
+
         {/* Brief description */}
         {node.brief_description && (
           <p className="text-xs text-gray-400 mt-1 line-clamp-2">{node.brief_description}</p>
@@ -128,16 +137,19 @@ export function ProcessTile({ node, isSelected, onSelect, level, siblingSelected
 
         {/* Vertical group chips */}
         {node.vertical_groups.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1.5">
-            {node.vertical_groups.map((vg) => {
-              const chip = VG_CHIP[vg]
-              if (!chip) return null
-              return (
-                <span key={vg} className={`text-[10px] font-medium px-1 py-0.5 rounded ${chip.cls}`}>
-                  {chip.abbr}
-                </span>
-              )
-            })}
+          <div className="flex items-center gap-1 mt-1">
+            <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">vg</span>
+            <div className="flex flex-wrap gap-1">
+              {node.vertical_groups.map((vg) => {
+                const chip = VG_CHIP[vg]
+                if (!chip) return null
+                return (
+                  <span key={vg} title={vg} className={`text-[10px] font-semibold px-1 py-0.5 rounded ${chip.cls}`}>
+                    {chip.abbr}
+                  </span>
+                )
+              })}
+            </div>
           </div>
         )}
 
@@ -154,6 +166,13 @@ export function ProcessTile({ node, isSelected, onSelect, level, siblingSelected
           </div>
         )}
 
+        {/* Hover popover */}
+        {hovered && (
+          <div className="absolute bottom-full left-0 mb-1 z-50 pointer-events-none bg-gray-900 border border-gray-700 rounded p-2 shadow-lg max-w-[240px] text-xs text-gray-300 leading-relaxed">
+            {node.brief_description ?? node.name}
+          </div>
+        )}
+
         {/* Footer */}
         <div className="flex items-center justify-between mt-auto pt-2">
           <span className="text-xs text-gray-500">
@@ -166,6 +185,7 @@ export function ProcessTile({ node, isSelected, onSelect, level, siblingSelected
                   onClick={(e) => { e.stopPropagation(); openDetail(node.id) }}
                   className="text-gray-400 hover:text-white text-xs leading-none"
                   title="View details"
+                  aria-label="Process info"
                 >
                   ⓘ
                 </button>
@@ -173,6 +193,7 @@ export function ProcessTile({ node, isSelected, onSelect, level, siblingSelected
                   onClick={handleEditClick}
                   className="text-gray-400 hover:text-white text-xs leading-none"
                   title="Edit classification"
+                  aria-label="Edit classification"
                 >
                   ✏️
                 </button>
