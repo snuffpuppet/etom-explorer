@@ -52,7 +52,7 @@ export function ClassificationPanel({ node, classification, onClose }: Classific
         <h3 className="text-sm font-semibold text-white mb-3 truncate">{node.name}</h3>
 
         {/* Category radio buttons */}
-        <div className="mb-3">
+        <div className="mb-4">
           <p className="text-xs text-gray-400 mb-1.5 uppercase tracking-wide">Category</p>
           <div className="space-y-1">
             {categories.map((cat) => (
@@ -75,7 +75,7 @@ export function ClassificationPanel({ node, classification, onClose }: Classific
         </div>
 
         {/* Review status dropdown */}
-        <div className="mb-3">
+        <div className="mb-4">
           <p className="text-xs text-gray-400 mb-1.5 uppercase tracking-wide">Review Status</p>
           <select
             value={reviewStatus}
@@ -94,20 +94,22 @@ export function ClassificationPanel({ node, classification, onClose }: Classific
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            rows={2}
+            rows={4}
             className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500 resize-none"
             placeholder="Optional notes..."
           />
         </div>
 
+        <hr className="border-gray-700 my-4" />
+
         {/* Descope form */}
         {showDescopeForm && (
-          <div className="mb-3">
+          <div className="mb-4">
             <p className="text-xs text-gray-400 mb-1.5 uppercase tracking-wide">Descope Reason</p>
             <textarea
               value={descopeReason}
               onChange={(e) => setDescopeReason(e.target.value)}
-              rows={2}
+              rows={4}
               className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-red-500 resize-none"
               placeholder="Reason for descoping..."
               autoFocus
@@ -138,7 +140,7 @@ export function ClassificationPanel({ node, classification, onClose }: Classific
               disabled={updateClassification.isPending}
               className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs py-1.5 rounded transition-colors"
             >
-              Save
+              Save Classification
             </button>
             <button
               onClick={() => setShowDescopeForm(true)}
