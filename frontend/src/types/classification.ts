@@ -1,40 +1,52 @@
-export type Category = 'oss' | 'oss_bss' | 'bss' | 'other' | 'unclassified'
-export type ReviewStatus = 'unreviewed' | 'under_review' | 'classified' | 'descoped'
+export type ScopeStatus = 'tbd' | 'in_scope' | 'adjacent' | 'out_of_scope' | 'gap'
+export type ReviewStatus = 'unreviewed' | 'under_review' | 'classified'
 
 export interface Classification {
   id: string
   name: string
-  category: Category
+  scope_status: ScopeStatus
   review_status: ReviewStatus
-  notes: string
-}
-
-export interface DescopedEntry {
-  id: string
-  name: string
   reason: string
   notes: string
 }
 
-export const CATEGORY_COLOURS: Record<Category, string> = {
-  oss:          'border-green-500',
-  oss_bss:      'border-blue-500',
-  bss:          'border-orange-500',
-  other:        'border-gray-500',
-  unclassified: 'border-gray-600',
+export const SCOPE_STATUS_BORDER: Record<ScopeStatus, string> = {
+  tbd:          'border-gray-600',
+  in_scope:     'border-green-500',
+  adjacent:     'border-blue-500',
+  out_of_scope: 'border-red-500',
+  gap:          'border-amber-500',
 }
 
-export const CATEGORY_LABELS: Record<Category, string> = {
-  oss:          'OSS',
-  oss_bss:      'OSS/BSS',
-  bss:          'BSS',
-  other:        'Other',
-  unclassified: 'Unclassified',
+export const SCOPE_STATUS_DOT: Record<ScopeStatus, string> = {
+  tbd:          'bg-gray-600',
+  in_scope:     'bg-green-500',
+  adjacent:     'bg-blue-500',
+  out_of_scope: 'bg-red-500',
+  gap:          'bg-amber-500',
+}
+
+export const SCOPE_STATUS_LABELS: Record<ScopeStatus, string> = {
+  tbd:          'TBD',
+  in_scope:     'In Scope',
+  adjacent:     'Adjacent',
+  out_of_scope: 'Out of Scope',
+  gap:          'Gap',
+}
+
+export const SCOPE_STATUS_BG: Record<ScopeStatus, string> = {
+  tbd:          'bg-gray-600',
+  in_scope:     'bg-green-600',
+  adjacent:     'bg-blue-600',
+  out_of_scope: 'bg-red-600',
+  gap:          'bg-amber-600',
 }
 
 export const REVIEW_STATUS_LABELS: Record<ReviewStatus, string> = {
   unreviewed:   'Unreviewed',
   under_review: 'Under Review',
   classified:   'Classified',
-  descoped:     'Descoped',
 }
+
+export const SCOPE_STATUSES: ScopeStatus[] = ['tbd', 'in_scope', 'adjacent', 'out_of_scope', 'gap']
+export const REVIEW_STATUSES: ReviewStatus[] = ['unreviewed', 'under_review', 'classified']
