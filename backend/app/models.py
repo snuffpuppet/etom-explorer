@@ -1,17 +1,17 @@
 from pydantic import BaseModel
 from typing import Optional, Literal
 
-CategoryType = Literal["oss", "oss_bss", "bss", "other", "unclassified"]
-ReviewStatusType = Literal["unreviewed", "under_review", "classified", "descoped"]
+ScopeStatusType = Literal["tbd", "in_scope", "adjacent", "out_of_scope", "gap"]
+ReviewStatusType = Literal["unreviewed", "under_review", "classified"]
 
 
 class ProcessNode(BaseModel):
-    id: str                          # e.g. "D-Market", "D-BusinessPartner", "1.2.3.4"
+    id: str
     name: str
-    level: int                       # 0=L0 domain group, 1=L1 domain, 2-7=data levels
+    level: int
     brief_description: Optional[str] = None
     extended_description: Optional[str] = None
-    domain: Optional[str] = None     # e.g. "Customer", "Service" — populated for L2+ nodes
+    domain: Optional[str] = None
     vertical_groups: list[str] = []
     original_id: Optional[str] = None
     uid: Optional[str] = None
@@ -25,26 +25,16 @@ ProcessNode.model_rebuild()
 class Classification(BaseModel):
     id: str
     name: str
-    category: CategoryType = "unclassified"
+    scope_status: ScopeStatusType = "tbd"
     review_status: ReviewStatusType = "unreviewed"
+    reason: str = ""
     notes: str = ""
 
 
 class ClassificationUpdate(BaseModel):
-    category: CategoryType
+    scope_status: ScopeStatusType
     review_status: ReviewStatusType
-    notes: str = ""
-
-
-class DescopedEntry(BaseModel):
-    id: str
-    name: str
-    reason: str
-    notes: str = ""
-
-
-class DescopedUpdate(BaseModel):
-    reason: str
+    reason: str = ""
     notes: str = ""
 
 
@@ -66,7 +56,7 @@ class TagDefCreate(BaseModel):
 class TagAssignment(BaseModel):
     node_id: str
     tag_id: str
-    cascade: str = "false"  # stored as string in MD table
+    cascade: str = "false"
 
 
 class TagAssignmentEntry(BaseModel):
