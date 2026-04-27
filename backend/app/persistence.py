@@ -235,10 +235,13 @@ def migrate_classifications() -> None:
 
 def migrate_descoped() -> None:
     """Merge descoped.md rows into classifications.md as out_of_scope.
-    Idempotent: re-running overwrites scope_status/reason for the same IDs.
+    Idempotent: runs at most once; after migrating, marks descoped.md with
+    migrated=true in its frontmatter and skips on all subsequent startups.
     No-op if descoped.md has no rows.
     """
-    _, desc_body = read_md_file("descoped.md")
+    desc_fm, desc_body = read_md_file("descoped.md")
+    if desc_fm.get("migrated"):
+        return
     desc_rows = parse_md_table(desc_body, "Descoped")
     if not desc_rows:
         return
@@ -269,6 +272,7 @@ def migrate_descoped() -> None:
 
     body_new = "## Classifications\n\n" + write_md_table(list(cls_by_id.values()), _CLS_NEW_COLUMNS)
     write_md_file("classifications.md", {"version": 2}, body_new)
+    write_md_file("descoped.md", {"migrated": True}, desc_body)
 
 
 _CHANGE_STREAM_TAGS = [

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { ProcessNode } from '../types/process'
 import type { Classification, ScopeStatus, ReviewStatus } from '../types/classification'
 import { SCOPE_STATUS_LABELS, SCOPE_STATUS_DOT, SCOPE_STATUS_BORDER, SCOPE_STATUSES, REVIEW_STATUS_LABELS, REVIEW_STATUSES, SCOPE_STATUS_BG } from '../types/classification'
@@ -23,6 +23,13 @@ export function ClassificationPanel({ node, classification, onClose }: Classific
   const [selectedTags, setSelectedTags] = useState<{ tag_id: string; cascade: boolean }[]>(
     nodeAssignments.map((a) => ({ tag_id: a.tag_id, cascade: a.cascade === 'true' }))
   )
+
+  useEffect(() => {
+    const assignments = allAssignments.filter((a) => a.node_id === node.id)
+    if (assignments.length > 0) {
+      setSelectedTags(assignments.map((a) => ({ tag_id: a.tag_id, cascade: a.cascade === 'true' })))
+    }
+  }, [allAssignments, node.id])
 
   const updateClassification = useUpdateClassification()
   const updateNodeTags = useUpdateNodeTags()

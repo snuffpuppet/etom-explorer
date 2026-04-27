@@ -51,9 +51,11 @@ export function L2ListView() {
 
   const l2Nodes = useMemo(() => {
     const nodes: ProcessNode[] = []
-    for (const domain of tree) {
-      for (const child of domain.children) {
-        if (child.level === 2) nodes.push(child)
+    for (const l0 of tree) {
+      for (const l1 of l0.children) {
+        for (const l2 of l1.children) {
+          if (l2.level === 2) nodes.push(l2)
+        }
       }
     }
     return nodes
