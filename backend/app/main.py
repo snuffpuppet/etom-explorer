@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.parser import parse_excel
-from app.persistence import ensure_data_files
+from app.persistence import ensure_data_files, migrate_classifications, migrate_descoped, seed_change_stream_tags
 
 EXCEL_PATH = os.getenv(
     "EXCEL_PATH",
@@ -17,6 +17,9 @@ EXCEL_PATH = os.getenv(
 async def lifespan(app: FastAPI):
     app.state.process_tree = parse_excel(EXCEL_PATH)
     ensure_data_files()
+    migrate_classifications()
+    migrate_descoped()
+    seed_change_stream_tags()
     app.state.seed_status = "idle"
     app.state.seed_result = None
     yield
@@ -27,16 +30,15 @@ app = FastAPI(title="eTOM Explorer API", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=False,  # No auth yet; allow_credentials=True is invalid with allow_origins=["*"]
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-from app.routers import processes, classifications, descoped, tags, teams, search, chat, llm, notes, value_streams, export  # noqa: E402
+from app.routers import processes, classifications, tags, teams, search, chat, llm, notes, value_streams, export  # noqa: E402
 
 app.include_router(processes.router, prefix="/api")
 app.include_router(classifications.router, prefix="/api")
-app.include_router(descoped.router, prefix="/api")
 app.include_router(tags.router, prefix="/api")
 app.include_router(teams.router, prefix="/api")
 app.include_router(search.router, prefix="/api")
