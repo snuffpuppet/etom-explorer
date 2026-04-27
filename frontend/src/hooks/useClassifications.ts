@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from '../api/client'
-import type { Classification, DescopedEntry } from '../types/classification'
+import type { Classification } from '../types/classification'
 
 export function useClassifications() {
   return useQuery({
@@ -10,48 +10,27 @@ export function useClassifications() {
   })
 }
 
-export function useDescoped() {
-  return useQuery({
-    queryKey: ['descoped'],
-    queryFn: () => apiFetch<DescopedEntry[]>('/descoped'),
-    staleTime: 0,
-  })
-}
-
 export function useUpdateClassification() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, ...body }: { id: string; category: string; review_status: string; notes: string }) =>
+    mutationFn: ({
+      id,
+      scope_status,
+      review_status,
+      reason,
+      notes,
+    }: {
+      id: string
+      scope_status: string
+      review_status: string
+      reason: string
+      notes: string
+    }) =>
       apiFetch<Classification>(`/classifications/${encodeURIComponent(id)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ scope_status, review_status, reason, notes }),
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['classifications'] }),
-  })
-}
-
-export function useUpsertDescoped() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: ({ id, reason, notes }: { id: string; reason: string; notes: string }) =>
-      apiFetch<DescopedEntry>(`/descoped/${encodeURIComponent(id)}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason, notes }),
-      }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['descoped'] })
-      qc.invalidateQueries({ queryKey: ['classifications'] })
-    },
-  })
-}
-
-export function useRemoveDescoped() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (id: string) =>
-      apiFetch(`/descoped/${encodeURIComponent(id)}`, { method: 'DELETE' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['descoped'] }),
   })
 }
