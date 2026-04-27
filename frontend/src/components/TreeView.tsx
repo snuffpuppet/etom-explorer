@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 import { ProcessNode } from '../types/process'
-import type { Classification, DescopedEntry, Category, ReviewStatus } from '../types/classification'
+import type { Classification, ScopeStatus, ReviewStatus } from '../types/classification'
 import { useNavigationStore } from '../store/navigation'
 import { useFilterStore } from '../store/filters'
-import { useClassifications, useDescoped } from '../hooks/useClassifications'
+import { useClassifications } from '../hooks/useClassifications'
 import { useTags, useTagAssignments, useTeams } from '../hooks/useTags'
 import { TileRow } from './TileRow'
 
@@ -16,8 +16,7 @@ function buildNodeMap(nodes: ProcessNode[]): Map<string, ProcessNode> {
   for (const node of nodes) {
     map.set(node.id, node)
     if (node.children.length > 0) {
-      const childMap = buildNodeMap(node.children)
-      childMap.forEach((v, k) => map.set(k, v))
+      buildNodeMap(node.children).forEach((v, k) => map.set(k, v))
     }
   }
   return map
@@ -25,57 +24,14 @@ function buildNodeMap(nodes: ProcessNode[]): Map<string, ProcessNode> {
 
 type Visibility = 'visible' | 'muted' | 'hidden'
 
-function nodeMatchesFilters(
-  node: ProcessNode,
-  classificationsMap: Map<string, Classification>,
-  descopedSet: Set<string>,
-  categories: Category[],
-  reviewStatuses: ReviewStatus[],
-  showDescoped: 'show' | 'dim' | 'hide',
-  selectedTags: string[],
-  tagAssignmentMap: Map<string, string[]>,
-  selectedTeam: string | null,
-  teamAssignmentMap: Map<string, string[]>,
-  selectedVGs: string[],
-): boolean {
-  const isDescoped = descopedSet.has(node.id)
-  const cls = classificationsMap.get(node.id)
-
-  if (isDescoped && showDescoped === 'hide') return false
-
-  if (categories.length > 0) {
-    const cat = cls?.category ?? 'unclassified'
-    if (!categories.includes(cat)) return false
-  }
-
-  if (reviewStatuses.length > 0) {
-    const rs = isDescoped ? 'descoped' : (cls?.review_status ?? 'unreviewed')
-    if (!reviewStatuses.includes(rs as ReviewStatus)) return false
-  }
-
-  if (selectedTags.length > 0) {
-    const nodeTags = tagAssignmentMap.get(node.id) ?? []
-    if (!selectedTags.some((t) => nodeTags.includes(t))) return false
-  }
-
-  if (selectedTeam !== null) {
-    const nodeTeams = teamAssignmentMap.get(node.id) ?? []
-    if (!nodeTeams.includes(selectedTeam)) return false
-  }
-
-  if (selectedVGs.length > 0) {
-    if (!node.vertical_groups.some((vg) => selectedVGs.includes(vg))) return false
-  }
-
-  return true
+function normalizeVG(vg: string): string {
+  return vg.trim().toLowerCase()
 }
 
 interface FilterParams {
   classificationsMap: Map<string, Classification>
-  descopedSet: Set<string>
-  categories: Category[]
+  scopeStatuses: ScopeStatus[]
   reviewStatuses: ReviewStatus[]
-  showDescoped: 'show' | 'dim' | 'hide'
   selectedTags: string[]
   tagAssignmentMap: Map<string, string[]>
   selectedTeam: string | null
@@ -83,9 +39,40 @@ interface FilterParams {
   selectedVGs: string[]
 }
 
+function nodeMatchesFilters(node: ProcessNode, fp: FilterParams): boolean {
+  const cls = fp.classificationsMap.get(node.id)
+
+  if (fp.scopeStatuses.length > 0) {
+    const ss = cls?.scope_status ?? 'tbd'
+    if (!fp.scopeStatuses.includes(ss)) return false
+  }
+
+  if (fp.reviewStatuses.length > 0) {
+    const rs = cls?.review_status ?? 'unreviewed'
+    if (!fp.reviewStatuses.includes(rs)) return false
+  }
+
+  if (fp.selectedTags.length > 0) {
+    const nodeTags = fp.tagAssignmentMap.get(node.id) ?? []
+    if (!fp.selectedTags.some((t) => nodeTags.includes(t))) return false
+  }
+
+  if (fp.selectedTeam !== null) {
+    const nodeTeams = fp.teamAssignmentMap.get(node.id) ?? []
+    if (!nodeTeams.includes(fp.selectedTeam)) return false
+  }
+
+  if (fp.selectedVGs.length > 0) {
+    const normalizedSelected = fp.selectedVGs.map(normalizeVG)
+    if (!node.vertical_groups.some(vg => normalizedSelected.includes(normalizeVG(vg)))) return false
+  }
+
+  return true
+}
+
 function hasMatchingDescendant(node: ProcessNode, fp: FilterParams): boolean {
   for (const child of node.children) {
-    if (nodeMatchesFilters(child, fp.classificationsMap, fp.descopedSet, fp.categories, fp.reviewStatuses, fp.showDescoped, fp.selectedTags, fp.tagAssignmentMap, fp.selectedTeam, fp.teamAssignmentMap, fp.selectedVGs)) return true
+    if (nodeMatchesFilters(child, fp)) return true
     if (hasMatchingDescendant(child, fp)) return true
   }
   return false
@@ -93,17 +80,15 @@ function hasMatchingDescendant(node: ProcessNode, fp: FilterParams): boolean {
 
 function getVisibility(node: ProcessNode, fp: FilterParams, filtersActive: boolean): Visibility {
   if (!filtersActive) return 'visible'
-  const matches = nodeMatchesFilters(node, fp.classificationsMap, fp.descopedSet, fp.categories, fp.reviewStatuses, fp.showDescoped, fp.selectedTags, fp.tagAssignmentMap, fp.selectedTeam, fp.teamAssignmentMap, fp.selectedVGs)
-  if (matches) return 'visible'
+  if (nodeMatchesFilters(node, fp)) return 'visible'
   if (hasMatchingDescendant(node, fp)) return 'muted'
   return 'hidden'
 }
 
 export function TreeView({ domain }: TreeViewProps) {
   const { drillPath, selectNode } = useNavigationStore()
-  const { categories, reviewStatuses, showDescoped, selectedTags, selectedTeam, selectedVGs } = useFilterStore()
+  const { scopeStatuses, reviewStatuses, selectedTags, selectedTeam, selectedVGs } = useFilterStore()
   const { data: classifications } = useClassifications()
-  const { data: descopedList } = useDescoped()
   const { data: tagDefs = [] } = useTags()
   const { data: tagAssignments = [] } = useTagAssignments()
   const { data: teamAssignments = [] } = useTeams()
@@ -116,15 +101,10 @@ export function TreeView({ domain }: TreeViewProps) {
     return map
   }, [classifications])
 
-  const descopedSet = useMemo(() => {
-    return new Set((descopedList ?? []).map((d: DescopedEntry) => d.id))
-  }, [descopedList])
-
   const tagAssignmentMap = useMemo(() => {
     const map = new Map<string, string[]>()
     for (const a of tagAssignments) {
-      const existing = map.get(a.node_id) ?? []
-      map.set(a.node_id, [...existing, a.tag_id])
+      map.set(a.node_id, [...(map.get(a.node_id) ?? []), a.tag_id])
     }
     return map
   }, [tagAssignments])
@@ -132,25 +112,19 @@ export function TreeView({ domain }: TreeViewProps) {
   const teamAssignmentMap = useMemo(() => {
     const map = new Map<string, string[]>()
     for (const t of teamAssignments) {
-      const existing = map.get(t.node_id) ?? []
-      map.set(t.node_id, [...existing, t.team])
+      map.set(t.node_id, [...(map.get(t.node_id) ?? []), t.team])
     }
     return map
   }, [teamAssignments])
 
-  const filtersActive = categories.length > 0 || reviewStatuses.length > 0 || showDescoped !== 'dim' || selectedTags.length > 0 || selectedTeam !== null || selectedVGs.length > 0
+  const filtersActive = scopeStatuses.length > 0 || reviewStatuses.length > 0 || selectedTags.length > 0 || selectedTeam !== null || selectedVGs.length > 0
 
-  const fp: FilterParams = { classificationsMap, descopedSet, categories, reviewStatuses, showDescoped, selectedTags, tagAssignmentMap, selectedTeam, teamAssignmentMap, selectedVGs }
+  const fp: FilterParams = { classificationsMap, scopeStatuses, reviewStatuses, selectedTags, tagAssignmentMap, selectedTeam, teamAssignmentMap, selectedVGs }
 
   const rows: { nodes: ProcessNode[]; depth: number }[] = []
-
-  if (domain.children.length > 0) {
-    rows.push({ nodes: domain.children, depth: 0 })
-  }
-
+  if (domain.children.length > 0) rows.push({ nodes: domain.children, depth: 0 })
   for (let i = 0; i < drillPath.length; i++) {
-    const selectedId = drillPath[i]
-    const selectedNode = nodeMap.get(selectedId)
+    const selectedNode = nodeMap.get(drillPath[i])
     if (!selectedNode || selectedNode.children.length === 0) break
     rows.push({ nodes: selectedNode.children, depth: i + 1 })
   }
@@ -162,7 +136,6 @@ export function TreeView({ domain }: TreeViewProps) {
         const parentNode = depth === 0 ? null : nodeMap.get(drillPath[depth - 1])
         const levelNum = nodes[0]?.level ?? depth + 2
         const label = depth === 0 ? `Level ${levelNum}` : `Level ${levelNum} — ${parentNode?.name ?? ''}`
-
         return (
           <TileRow
             key={depth}
@@ -172,9 +145,7 @@ export function TreeView({ domain }: TreeViewProps) {
             level={depth + 1}
             label={label}
             classificationsMap={classificationsMap}
-            descopedSet={descopedSet}
             getVisibility={(node) => getVisibility(node, fp, filtersActive)}
-            showDescoped={showDescoped}
             tagDefs={tagDefs}
             tagAssignments={tagAssignments}
             teamAssignments={teamAssignments}
