@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { ProcessNode } from '../types/process'
 import type { Classification } from '../types/classification'
-import { CATEGORY_COLOURS } from '../types/classification'
+import { SCOPE_STATUS_BORDER, SCOPE_STATUS_DOT } from '../types/classification'
 import { ClassificationPanel } from './ClassificationPanel'
 import { TagBadge } from './TagBadge'
 import { TeamBadge } from './TeamBadge'
@@ -15,7 +15,6 @@ interface ProcessTileProps {
   level: number
   siblingSelected: boolean
   classification?: Classification | null
-  isDescoped?: boolean
   isMuted?: boolean
   tagDefs?: TagDef[]
   tagAssignments?: TagAssignment[]
@@ -41,18 +40,8 @@ function getLevelBackground(level: number): string {
   return 'bg-[#151c28]'
 }
 
-function getStatusDot(classification: Classification | null | undefined, isDescoped: boolean): { colour: string; title: string } {
-  if (isDescoped) return { colour: 'bg-red-500', title: 'Descoped' }
-  if (!classification) return { colour: 'bg-gray-600', title: 'Unreviewed' }
-  switch (classification.review_status) {
-    case 'classified':   return { colour: 'bg-green-500', title: 'Classified' }
-    case 'under_review': return { colour: 'bg-yellow-500', title: 'Under Review' }
-    case 'descoped':     return { colour: 'bg-red-500', title: 'Descoped' }
-    default:             return { colour: 'bg-gray-600', title: 'Unreviewed' }
-  }
-}
 
-export function ProcessTile({ node, isSelected, onSelect, level, siblingSelected, classification, isDescoped = false, isMuted = false, tagDefs = [], tagAssignments = [], teamAssignments = [] }: ProcessTileProps) {
+export function ProcessTile({ node, isSelected, onSelect, level, siblingSelected, classification, isMuted = false, tagDefs = [], tagAssignments = [], teamAssignments = [] }: ProcessTileProps) {
   const [panelOpen, setPanelOpen] = useState(false)
   const [hovered, setHovered] = useState(false)
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -66,11 +55,9 @@ export function ProcessTile({ node, isSelected, onSelect, level, siblingSelected
   const childCount = node.children.length
   const dimmed = !isSelected && siblingSelected
 
-  const borderColour = isDescoped
-    ? 'border-red-500'
-    : CATEGORY_COLOURS[classification?.category ?? 'unclassified']
-
-  const dot = getStatusDot(classification, isDescoped)
+  const scopeStatus = classification?.scope_status ?? 'tbd'
+  const borderColour = SCOPE_STATUS_BORDER[scopeStatus]
+  const dotClass = SCOPE_STATUS_DOT[scopeStatus]
 
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -84,14 +71,7 @@ export function ProcessTile({ node, isSelected, onSelect, level, siblingSelected
 
   if (isMuted) {
     return (
-      <div
-        className={[
-          'flex flex-col border-l-4 rounded p-3',
-          'min-w-[180px] flex-1 opacity-30 pointer-events-none',
-          bgClass,
-          borderColour,
-        ].join(' ')}
-      >
+      <div className={['flex flex-col border-l-4 rounded p-3', 'min-w-[180px] flex-1 opacity-30 pointer-events-none', bgClass, borderColour].join(' ')}>
         <p className="text-sm font-semibold text-white line-clamp-2">{node.name}</p>
       </div>
     )
@@ -100,13 +80,8 @@ export function ProcessTile({ node, isSelected, onSelect, level, siblingSelected
   return (
     <div
       className="relative"
-      onMouseEnter={() => {
-        hoverTimerRef.current = setTimeout(() => setHovered(true), 250)
-      }}
-      onMouseLeave={() => {
-        if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current)
-        setHovered(false)
-      }}
+      onMouseEnter={() => { hoverTimerRef.current = setTimeout(() => setHovered(true), 250) }}
+      onMouseLeave={() => { if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current); setHovered(false) }}
     >
       <div
         onClick={onSelect}
@@ -114,28 +89,18 @@ export function ProcessTile({ node, isSelected, onSelect, level, siblingSelected
         className={[
           'flex flex-col border-l-4 rounded p-3 cursor-pointer',
           'min-w-[180px] flex-1 transition-opacity',
-          bgClass,
-          borderColour,
+          bgClass, borderColour,
           isSelected ? 'ring-2 ring-blue-400 opacity-100' : '',
           dimmed ? 'opacity-60' : '',
-        ]
-          .filter(Boolean)
-          .join(' ')}
+        ].filter(Boolean).join(' ')}
       >
-        {/* Process name */}
-        <p className={`text-sm font-semibold text-white line-clamp-2 ${isDescoped ? 'line-through opacity-50' : ''}`}>
-          {node.name}
-        </p>
-
-        {/* Process ID + level */}
+        <p className="text-sm font-semibold text-white line-clamp-2">{node.name}</p>
         <p className="text-xs font-mono text-gray-500">{node.id} · L{level}</p>
 
-        {/* Brief description */}
         {node.brief_description && (
           <p className="text-xs text-gray-400 mt-1 line-clamp-2">{node.brief_description}</p>
         )}
 
-        {/* Vertical group chips */}
         {node.vertical_groups.length > 0 && (
           <div className="flex items-center gap-1 mt-1">
             <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">vg</span>
@@ -153,7 +118,6 @@ export function ProcessTile({ node, isSelected, onSelect, level, siblingSelected
           </div>
         )}
 
-        {/* Tag + team badges */}
         {(nodeTagAssignments.length > 0 || nodeTeamAssignments.length > 0) && (
           <div className="flex flex-wrap gap-1 mt-2">
             {nodeTagAssignments.map((a) => {
@@ -166,50 +130,28 @@ export function ProcessTile({ node, isSelected, onSelect, level, siblingSelected
           </div>
         )}
 
-        {/* Hover popover */}
         {hovered && (
           <div className="absolute bottom-full left-0 mb-1 z-50 pointer-events-none bg-gray-900 border border-gray-700 rounded p-2 shadow-lg max-w-[240px] text-xs text-gray-300 leading-relaxed">
             {node.brief_description ?? node.name}
           </div>
         )}
 
-        {/* Footer */}
         <div className="flex items-center justify-between mt-auto pt-2">
-          <span className="text-xs text-gray-500">
-            {childCount > 0 ? `${childCount} children` : ''}
-          </span>
+          <span className="text-xs text-gray-500">{childCount > 0 ? `${childCount} children` : ''}</span>
           <div className="flex items-center gap-1.5">
             {hovered && (
               <>
-                <button
-                  onClick={(e) => { e.stopPropagation(); openDetail(node.id) }}
-                  className="text-gray-400 hover:text-white text-xs leading-none"
-                  title="View details"
-                  aria-label="Process info"
-                >
-                  ⓘ
-                </button>
-                <button
-                  onClick={handleEditClick}
-                  className="text-gray-400 hover:text-white text-xs leading-none"
-                  title="Edit classification"
-                  aria-label="Edit classification"
-                >
-                  ✏️
-                </button>
+                <button onClick={(e) => { e.stopPropagation(); openDetail(node.id) }} className="text-gray-400 hover:text-white text-xs leading-none" title="View details" aria-label="Process info">ⓘ</button>
+                <button onClick={handleEditClick} className="text-gray-400 hover:text-white text-xs leading-none" title="Edit scope" aria-label="Edit scope">✏️</button>
               </>
             )}
-            <span className={`inline-block w-1.5 h-1.5 rounded-full ${dot.colour}`} title={dot.title} />
+            <span className={`inline-block w-1.5 h-1.5 rounded-full ${dotClass}`} title={scopeStatus} />
           </div>
         </div>
       </div>
 
       {panelOpen && (
-        <ClassificationPanel
-          node={node}
-          classification={classification ?? null}
-          onClose={() => setPanelOpen(false)}
-        />
+        <ClassificationPanel node={node} classification={classification ?? null} onClose={() => setPanelOpen(false)} />
       )}
     </div>
   )
