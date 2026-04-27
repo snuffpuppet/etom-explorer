@@ -8,12 +8,11 @@ router = APIRouter()
 
 FILENAME = "classifications.md"
 SECTION = "Classifications"
-COLUMNS = ["id", "name", "category", "review_status", "notes"]
+COLUMNS = ["id", "name", "scope_status", "review_status", "reason", "notes"]
 
 
 @router.get("/classifications", response_model=list[Classification])
 async def get_classifications(request: Request):
-    """Return all classifications."""
     _, body = read_md_file(FILENAME)
     rows = parse_md_table(body, SECTION)
     return [Classification(**row) for row in rows]
@@ -21,7 +20,6 @@ async def get_classifications(request: Request):
 
 @router.put("/classifications/{node_id:path}", response_model=Classification)
 async def update_classification(node_id: str, update: ClassificationUpdate, request: Request):
-    """Upsert a classification for a process node."""
     node_id = unquote(node_id)
 
     tree = request.app.state.process_tree
@@ -32,8 +30,14 @@ async def update_classification(node_id: str, update: ClassificationUpdate, requ
     _, body = read_md_file(FILENAME)
     rows = parse_md_table(body, SECTION)
 
-    new_row = {"id": node_id, "name": node.name, "category": update.category,
-               "review_status": update.review_status, "notes": update.notes}
+    new_row = {
+        "id": node_id,
+        "name": node.name,
+        "scope_status": update.scope_status,
+        "review_status": update.review_status,
+        "reason": update.reason,
+        "notes": update.notes,
+    }
     existing = next((r for r in rows if r["id"] == node_id), None)
     if existing:
         rows = [new_row if r["id"] == node_id else r for r in rows]
@@ -41,5 +45,5 @@ async def update_classification(node_id: str, update: ClassificationUpdate, requ
         rows.append(new_row)
 
     body_new = f"## {SECTION}\n\n" + write_md_table(rows, COLUMNS)
-    write_md_file(FILENAME, {"version": 1}, body_new)
+    write_md_file(FILENAME, {"version": 2}, body_new)
     return Classification(**new_row)
