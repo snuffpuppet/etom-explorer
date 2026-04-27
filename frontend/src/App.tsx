@@ -5,6 +5,7 @@ import { TopBar } from './components/TopBar'
 import { DomainTabs } from './components/DomainTabs'
 import { FilterBar } from './components/FilterBar'
 import { TreeView } from './components/TreeView'
+import { L2ListView } from './components/L2ListView'
 import { ValueStreamsView } from './components/ValueStreamsView'
 import { TagManager } from './components/TagManager'
 import { ProcessDetail } from './components/ProcessDetail'
@@ -13,7 +14,6 @@ import { ExportDialog } from './components/ExportDialog'
 import { useProcessTree } from './hooks/useProcessTree'
 import { useNavigationStore } from './store/navigation'
 import { useClassifications } from './hooks/useClassifications'
-import { useDescoped } from './hooks/useClassifications'
 
 const queryClient = new QueryClient()
 
@@ -21,11 +21,11 @@ function AppInner() {
   const { data: tree, isLoading, isError } = useProcessTree()
   const { activeDomainId, setActiveDomain, detailNodeId, closeDetail } = useNavigationStore()
   const { data: classifications = [] } = useClassifications()
-  const { data: descopedList = [] } = useDescoped()
   const [tagManagerOpen, setTagManagerOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
   const [valueStreamsOpen, setValueStreamsOpen] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
+  const [activeView, setActiveView] = useState<'tree' | 'list'>('tree')
 
   useEffect(() => {
     if (tree && tree.length > 0 && !activeDomainId) {
@@ -35,7 +35,6 @@ function AppInner() {
 
   const activeDomain = tree?.find((d) => d.id === activeDomainId) ?? tree?.[0]
 
-  // Resolve detail node from flat tree
   const detailNode = detailNodeId && tree
     ? (() => {
         function find(nodes: ProcessNode[]): ProcessNode | null {
@@ -51,7 +50,6 @@ function AppInner() {
     : null
 
   const detailClassification = classifications.find((c) => c.id === detailNodeId) ?? null
-  const detailDescoped = descopedList.find((d) => d.id === detailNodeId) ?? null
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
@@ -63,23 +61,21 @@ function AppInner() {
         onOpenExport={() => setExportOpen(true)}
       />
       {isLoading && (
-        <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
-          Loading processes...
-        </div>
+        <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">Loading processes...</div>
       )}
       {isError && (
-        <div className="flex-1 flex items-center justify-center text-red-400 text-sm">
-          Failed to load process tree.
-        </div>
+        <div className="flex-1 flex items-center justify-center text-red-400 text-sm">Failed to load process tree.</div>
       )}
       {tree && (
         <>
-          <DomainTabs domains={tree} />
+          <DomainTabs domains={tree} activeView={activeView} onViewChange={setActiveView} />
           <FilterBar />
           <div className="flex-1 bg-gray-950 flex flex-col overflow-hidden">
             {valueStreamsOpen
               ? <ValueStreamsView />
-              : activeDomain && <TreeView domain={activeDomain} />
+              : activeView === 'list'
+                ? <L2ListView />
+                : activeDomain && <TreeView domain={activeDomain} />
             }
           </div>
         </>
@@ -91,7 +87,6 @@ function AppInner() {
         <ProcessDetail
           node={detailNode}
           classification={detailClassification}
-          descopedEntry={detailDescoped}
           onClose={closeDetail}
         />
       )}
